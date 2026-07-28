@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE OLD NORSE // ARMORY DASHBOARD</title>
+ 
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vault: { dark: '#090a0f', border: '#1e2230' },
+            panel: { dark: '#0e1017' },
+            card: { dark: '#131622' }
+          },
+          fontFamily: {
+            tech: ['Rajdhani', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Custom CSS Link -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#090a0f] text-gray-200 min-h-screen flex flex-col antialiased selection:bg-red-600 selection:text-white font-sans">
+
+  <!-- MODAL BLOKIR (SECURITY SYSTEM) -->
+  <div id="blocked-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-[#0e1017] border border-red-500/30 rounded-2xl shadow-2xl p-6 text-center relative overflow-hidden">
+      <button onclick="closeBlockedModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="w-36 h-48 mx-auto mb-4 rounded-xl border border-red-500/20 overflow-hidden relative bg-black flex items-center justify-center shadow-inner">
+        <img src="https://images.unsplash.com/photo-1698326652480-7fba49aef0aa?q=80&w=710&auto=format&fit=crop" alt="Wanted" class="w-full h-full object-cover">
+        <div class="absolute bottom-0 inset-x-0 bg-red-600 text-white font-tech font-bold tracking-wider text-xs py-1">ACCESS TERMINATED</div>
+      </div>
+      <h2 class="text-lg font-bold font-tech text-red-500 tracking-wide uppercase mb-1">Access Denied by the System</h2>
+      <p class="text-xs text-zinc-400 mb-6">Your account is unauthorized or has been blacklisted.</p>
+      <button onclick="closeBlockedModal()" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2.5 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-red-600/20">
+        Mengerti
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL DETAIL TRANSAKSI -->
+  <div id="tx-detail-modal" class="hidden fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-[#0e1017] border border-[#1e2230] rounded-2xl shadow-2xl p-6 relative">
+      <button onclick="closeTxDetailModal()" class="absolute top-5 right-5 text-zinc-500 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="flex items-center gap-2.5 mb-5 border-b border-[#1e2230] pb-4">
+        <div class="p-2 bg-red-500/10 text-red-500 rounded-lg">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="modal-tx-id" class="font-bold text-base text-white">Transaction Detail</h3>
+          <p class="text-[11px] text-zinc-400">Rincian manifest pemesanan brangkas</p>
+        </div>
+        <span id="modal-tx-priority" class="ml-auto px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-semibold rounded-full uppercase">High Priority</span>
+      </div>
+      
+      <div class="space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-4 bg-[#131622] p-4 rounded-xl border border-[#1e2230]">
+          <div><span class="text-zinc-500 block text-[11px] mb-0.5">Pembeli (Buyer)</span><span id="modal-tx-buyer" class="font-semibold text-white text-sm">-</span></div>
+          <div><span class="text-zinc-500 block text-[11px] mb-0.5">Rank / Divisi</span><span id="modal-tx-role" class="font-semibold text-white text-sm">-</span></div>
+          <div><span class="text-zinc-500 block text-[11px] mb-0.5">Waktu Pemesanan</span><span id="modal-tx-date" class="text-zinc-300 font-medium">-</span></div>
+          <div><span class="text-zinc-500 block text-[11px] mb-0.5">Durasi Menunggu</span><span id="modal-tx-duration" class="text-amber-400 font-semibold">-</span></div>
+        </div>
+
+        <div>
+          <span class="text-zinc-400 font-semibold text-xs block mb-2">List of Ordered Items:</span>
+          <div id="modal-tx-items" class="bg-[#131622] p-3.5 rounded-xl border border-[#1e2230] space-y-2 max-h-40 overflow-y-auto scrollbar-thin"></div>
+        </div>
+
+        <div class="border-t border-[#1e2230] pt-3 space-y-2">
+          <div class="flex justify-between items-center text-xs"><span class="text-zinc-400">Subtotal:</span><span id="modal-tx-subtotal" class="text-zinc-300 font-medium">$0</span></div>
+          <div class="flex justify-between items-center text-xs"><span class="text-zinc-400 flex items-center gap-1.5"><i data-lucide="ticket" class="w-3.5 h-3.5 text-purple-400"></i> Voucher Diskon:</span><span id="modal-tx-voucher" class="font-semibold text-emerald-400">None</span></div>
+          <div class="flex justify-between items-center text-base font-bold pt-2 border-t border-[#1e2230]"><span class="text-white">Total Pembayaran:</span><span id="modal-tx-total" class="text-amber-400 text-xl">$0</span></div>
+          <div class="flex justify-between items-center text-xs"><span class="text-zinc-500">Estimasi Profit Brangkas (5%):</span><span id="modal-tx-profit" class="text-emerald-400 font-medium">$0</span></div>
+        </div>
+
+        <div class="bg-[#131622] p-3.5 rounded-xl border border-[#1e2230] flex items-center justify-between">
+          <div>
+            <span class="text-zinc-500 text-[11px] block">Metode Pembayaran:</span>
+            <span class="text-white font-semibold text-xs">MAZE BANK WIRE</span>
+          </div>
+          <div class="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg flex items-center gap-1.5 cursor-pointer hover:bg-red-500/20">
+            <i data-lucide="file-check" class="w-4 h-4"></i>
+            <span class="text-[10px] font-semibold uppercase">Lihat Bukti Transfer</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="modal-action-buttons" class="grid grid-cols-2 gap-3 mt-6">
+        <button onclick="rejectModalOrder()" class="w-full bg-[#1e2230] hover:bg-red-600/20 hover:text-red-400 text-zinc-300 font-semibold py-2.5 rounded-xl text-xs uppercase transition border border-transparent hover:border-red-500/30">
+          Tolak Pesanan
+        </button>
+        <button onclick="approveModalOrder()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-xs uppercase transition shadow-lg shadow-emerald-600/20">
+          Setujui & Kirim
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DUAL-MODE LOGIN GATEWAY -->
+  <div id="auth-gate" class="fixed inset-0 z-50 bg-[#090a0f] flex items-center justify-center p-4">
+    <div class="w-full max-w-3xl bg-[#0e1017] border border-[#1e2230] rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2">
+      <div class="p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[#1e2230]">
+        <div>
+          <!-- KODE BARU YANG SUDAH DIGANTI -->
+<div class="flex items-center space-x-3 mb-6">
+  <div class="w-11 h-11 p-1.5 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center">
+    <!-- 1. SUDAH DIGANTI MENJADI LOGO TON -->
+    <img src="https://raw.githubusercontent.com/ganzfathur9-web/logo-website-ton-/main/image.png" alt="Logo TON" class="w-full h-full object-contain">
+  </div>
+  <div>
+    <h1 class="text-base font-bold text-white tracking-wide">THE OLD NORSE</h1>
+    <p class="text-[11px] text-zinc-500 font-medium">Syndicate Armory System</p>
+  </div>
+</div>
+          <form onsubmit="handleAuthLogin(event)" class="space-y-3">
+            <div>
+              <input type="text" id="auth-username" placeholder="Username" class="w-full bg-[#131622] text-xs text-white px-3.5 py-2.5 rounded-xl border border-[#1e2230] focus:outline-none focus:border-red-500">
+            </div>
+            <div>
+              <input type="password" id="auth-passcode" placeholder="Password" class="w-full bg-[#131622] text-xs text-white px-3.5 py-2.5 rounded-xl border border-[#1e2230] focus:outline-none focus:border-red-500">
+            </div>
+            <button type="submit" class="w-full bg-red-600 hover:bg-red-500 text-white py-2.5 rounded-xl text-xs font-semibold transition shadow-lg shadow-red-600/20 mt-1">
+              Login Account
+            </button>
+          </form>
+        </div>
+      </div>
+      <div class="bg-[#0b0c12] p-12 flex flex-col items-center justify-center text-center relative">
+        <div class="w-28 h-28 mb-4 p-3 bg-red-500/5 border border-red-500/20 rounded-2xl flex items-center justify-center shadow-xl">
+          <img src="https://raw.githubusercontent.com/ganzfathur9-web/logo-website-ton-/main/image.png" alt="Logo TON" class="w-full h-full object-contain">
+        </div>
+        <h2 class="text-xl font-bold text-white font-tech tracking-wider uppercase">THE OLD NORSE</h2>
+        <p class="text-[11px] text-red-500 font-medium mt-0.5">Armory & Inventory Management</p>
+        <div class="absolute bottom-4 inset-x-0 text-center text-[10px] text-zinc-600">Restricted Access // Authorized Personnel Only</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN DASHBOARD -->
+  <div id="main-app" class="hidden min-h-screen flex flex-col md:flex-row">
+    
+   <!-- SIDEBAR NAVIGATION MENU (DENGAN TOMBOL GARIS 3 UNTUK MENUTUP) -->
+<aside id="app-sidebar" class="w-full md:w-[280px] bg-[#0e1017] border-r border-[#1e2230] flex flex-col shrink-0 font-sans h-screen transition-all duration-300 z-40">
+  <div class="p-5 border-b border-[#1e2230] flex items-center justify-between shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 border border-red-500/30 bg-red-500/10 text-red-500 flex items-center justify-center rounded-xl shadow-sm">
+          <img src="https://raw.githubusercontent.com/ganzfathur9-web/logo-website-ton-/main/image.png" class="w-5 h-5 object-contain" alt="Logo">
+        </div>
+        <div>
+          <span class="text-xs font-bold text-white block leading-none">THE OLD NORSE</span>
+          <span class="text-[9px] font-semibold text-red-500 block mt-0.5 uppercase tracking-wider">Armory System</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="p-3 shrink-0">
+  <div class="relative">
+    <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+    <!-- Tambahkan atribut id dan oninput di bawah ini -->
+    <input type="text" id="sidebar-menu-search" oninput="filterSidebarMenu(this.value)" placeholder="Search Menu" class="w-full bg-[#131622] border border-[#1e2230] text-zinc-300 text-xs rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:border-red-500 transition">
+  </div>
+</div>
+
+      <nav class="flex-1 overflow-y-auto px-3 py-2 space-y-1 text-xs font-medium scrollbar-thin">
+        
+        <!-- 1. MENU UTAMA -->
+        <div id="nav-group-hq" class="space-y-1">
+          <div class="px-3 py-1.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Main Course</div>
+          <button onclick="switchTab('admin-dashboard')" data-tab="admin-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 text-amber-400"></i>
+            <span>Dashboard</span>
+          </button>
+        </div>
+
+        <!-- 2. MEMBER SERVICE -->
+        <div class="space-y-1 pt-3 mt-2 border-t border-[#1e2230]">
+          <div class="px-3 py-1 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Member Service</div>
+          <button onclick="switchTab('weapon-shop')" data-tab="weapon-shop" class="nav-btn w-full flex items-center justify-between px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition">
+            <div class="flex items-center gap-3">
+              <i data-lucide="shopping-bag" class="w-4 h-4 text-red-500"></i>
+              <span>Marketplace</span>
+            </div>
+            <span id="sidebar-cart-badge" class="bg-red-600 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+          </button>
+          <button onclick="switchTab('my-orders')" data-tab="my-orders" class="nav-btn w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition">
+            <i data-lucide="clock" class="w-4 h-4 text-purple-400"></i>
+            <span>Processing</span>
+          </button>
+          <button onclick="switchTab('profile')" data-tab="profile" class="nav-btn w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition">
+            <i data-lucide="user" class="w-4 h-4 text-blue-400"></i>
+            <span>Profile Account IC</span>
+          </button>
+        </div>
+
+   <!-- 3. TRANSACTION & ORDER -->
+<div class="admin-only space-y-1 pt-3 mt-2 border-t border-[#1e2230]">
+  <div class="px-3 py-1 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Transaction & Order</div>
+  <div>
+    <button onclick="toggleMenu('menu-order', 'icon-order')" class="w-full flex items-center justify-between px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition gap-1">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <i data-lucide="shopping-cart" class="w-4 h-4 text-amber-400 shrink-0"></i>
+        <span class="text-white whitespace-nowrap truncate">Order & Transactions</span>
+      </div>
+      <i data-lucide="chevron-down" id="icon-order" class="w-4 h-4 transition-transform duration-200 shrink-0"></i>
+    </button>
+    
+    <div id="menu-order" class="hidden pl-3 py-1 space-y-1 border-l border-[#1e2230] ml-5 mt-1">
+      <button onclick="switchTab('transaction-process')" data-tab="transaction-process" class="nav-btn w-full text-left py-1.5 px-3 text-zinc-400 hover:text-white text-xs transition flex items-center justify-between rounded-lg gap-1">
+        <span class="whitespace-nowrap truncate">Processing Order</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+      </button>
+      <button onclick="switchTab('release-outstanding')" data-tab="release-outstanding" class="nav-btn w-full text-left py-1.5 px-3 text-zinc-400 hover:text-white text-xs transition flex items-center justify-between rounded-lg gap-1">
+        <span class="whitespace-nowrap truncate">Release Transaction</span>
+        <span id="out-waiting-count" class="bg-amber-500/10 text-amber-400 text-[10px] px-1.5 py-0.2 rounded font-semibold shrink-0">0</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 4. INTERNAL SERVICE -->
+<div class="admin-only space-y-1 pt-3 mt-2 border-t border-[#1e2230]">
+  <div class="px-3 py-1 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Internal Service</div>
+  <div>
+    <button onclick="toggleMenu('menu-vault', 'icon-vault')" class="w-full flex items-center justify-between px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition gap-1">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <i data-lucide="shield" class="w-4 h-4 text-red-500 shrink-0"></i>
+        <span class="whitespace-nowrap truncate text-xs">Inventory Service</span>
+      </div>
+      <i data-lucide="chevron-down" id="icon-vault" class="w-4 h-4 transition-transform duration-200 shrink-0"></i>
+    </button>
+    
+    <div id="menu-vault" class="hidden pl-3 py-1 space-y-1 border-l border-[#1e2230] ml-5 mt-1">
+      <button onclick="switchTab('vault-stock')" data-tab="vault-stock" class="nav-btn w-full text-left py-1.5 px-3 text-zinc-400 hover:text-white text-xs transition rounded-lg">
+        <span class="whitespace-nowrap truncate block">Logs Inventory</span>
+      </button>
+      <button onclick="switchTab('vault-history')" data-tab="vault-history" class="nav-btn w-full text-left py-1.5 px-3 text-zinc-400 hover:text-white text-xs transition flex items-center justify-between rounded-lg gap-1">
+        <span class="whitespace-nowrap truncate">History Transaction</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+      </button>
+      <button onclick="switchTab('metal-scrap')" data-tab="metal-scrap" class="nav-btn w-full text-left py-1.5 px-3 text-zinc-400 hover:text-white text-xs transition rounded-lg">
+        <span class="whitespace-nowrap truncate block">Logs Metal Scrap</span>
+      </button>
+      <button onclick="switchTab('stock-proof')" data-tab="stock-proof" class="nav-btn w-full text-left py-1.5 px-3 text-zinc-400 hover:text-white text-xs transition rounded-lg">
+        <span class="whitespace-nowrap truncate block">Vault Data</span>
+      </button>
+    </div>
+  </div>
+  
+  <button onclick="switchTab('the-old-norse')" data-tab="the-old-norse" class="nav-btn w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition">
+    <i data-lucide="users" class="w-4 h-4 text-red-500 shrink-0"></i>
+    <span class="whitespace-nowrap truncate">List Roster The Old Norse</span>
+  </button>
+</div>
+
+       <!-- 5. MODERATOR SERVICE -->
+        <div class="mod-only space-y-1 pt-3 mt-2 border-t border-[#1e2230] hidden">
+          <div class="px-3 py-1 text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Moderator Service
+          </div>
+          
+          <button onclick="switchTab('blacklist-manager')" data-tab="blacklist-manager" class="nav-btn w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:text-white hover:bg-red-500/10 rounded-xl transition">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i>
+            <span>Account Blacklist</span>
+          </button>
+
+          <!-- 1. ACCOUNT MANAGE (Ditaruh di atas Manage Voucher) -->
+          <button onclick="switchTab('account-manager')" data-tab="account-manager" class="nav-btn w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition">
+            <i data-lucide="key" class="w-4 h-4 text-purple-400"></i>
+            <span>Account Manage</span>
+          </button>
+
+          <!-- 2. MANAGE VOUCHER (Sekarang berada di bawah Account Manage) -->
+          <button onclick="switchTab('voucher-manager')" data-tab="voucher-manager" class="nav-btn w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition">
+            <i data-lucide="ticket" class="w-4 h-4 text-purple-400"></i>
+            <span>Manage Voucher</span>
+          </button>
+          
+          <button onclick="triggerSystemReset()" class="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:text-white hover:bg-red-600 rounded-xl transition text-xs font-semibold mt-2 border border-red-500/20">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>Reset all history</span>
+          </button>
+        </div>
+
+      </nav>
+
+      <div class="p-3.5 border-t border-[#1e2230] bg-[#090a0f] space-y-2.5 shrink-0">
+        <div class="admin-only bg-[#131622] p-3 rounded-xl border border-[#1e2230] space-y-1">
+          <div class="flex items-center justify-between text-zinc-400 text-[11px] font-semibold">
+            <span>Balance</span>
+            <i data-lucide="refresh-cw" class="w-3 h-3 text-zinc-500 cursor-pointer hover:text-white" onclick="updateDashboardData()"></i>
+          </div>
+          <div class="text-lg font-bold font-tech text-emerald-400" id="sidebar-vault-balance">$0</div>
+          <div class="text-[10px] text-zinc-500">Synced: <span id="synced-time" class="text-zinc-400">Baru saja</span></div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1 px-1">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold flex items-center justify-center text-xs shrink-0 relative overflow-hidden">
+              <img id="sidebar-user-avatar" src="" class="w-full h-full object-cover hidden absolute inset-0 z-10" alt="Avatar">
+              <span id="sidebar-user-initials" class="z-0">US</span>
+            </div>
+            <div>
+              <p id="user-display-name" class="text-xs font-bold text-white leading-none uppercase">USER</p>
+              <p id="user-role-text" class="text-[10px] font-semibold text-red-400 mt-0.5 uppercase">SOLDIERS</p>
+            </div>
+          </div>
+          <button onclick="logout()" class="text-zinc-500 hover:text-red-400 p-1"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEW CONTENT -->
+    <main class="flex-grow bg-[#090a0f] p-6 sm:p-8 overflow-y-auto h-screen relative z-10">
+      
+      <!-- BANNER LOCKDOWN -->
+      <div id="lockdown-warning-banner" class="hidden mb-6 bg-red-500/10 border border-red-500/30 rounded-2xl p-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5 text-red-200">
+          <div class="p-2 bg-red-500/20 rounded-xl text-red-500 shrink-0">
+            <i data-lucide="alert-octagon" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-white">BRANGKAS DALAM MODE DARURAT (LOCKDOWN)</h4>
+            <p class="text-xs text-zinc-300">Seluruh aktivitas pemesanan dan checkout sedang dinonaktifkan sementara oleh Moderator.</p>
+          </div>
+        </div>
+      </div>
+
+      <header class="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-[#1e2230] pb-5 mb-8 gap-4">
+  <div class="flex items-center gap-3.5">
+    <!-- TOMBOL GARIS 3 UTAMA YANG SELALU MUNCUL DI LAYAR -->
+    <button onclick="toggleSidebar()" class="p-2.5 bg-[#0e1017] border border-[#1e2230] text-zinc-400 hover:text-white rounded-xl transition shadow-sm" title="Buka/Tutup Menu">
+      <i data-lucide="menu" class="w-5 h-5"></i>
+    </button>
+    <div>
+      <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2.5" id="view-title">
+        <i data-lucide="layout-dashboard" class="w-5 h-5 text-amber-400 inline"></i> Dashboard
+      </h1>
+      <p class="text-xs text-zinc-400 mt-0.5" id="view-subtitle">Ringkasan detail identitas, rank, dan operasional vault The Old Norse.</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <span class="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full text-xs font-medium flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Log Active
+    </span>
+  </div>
+</header>
+
+      <!-- KONTEN TAB -->
+      <div id="tab-content">
+        
+        <!-- 1. WEAPON SHOP / MARKETPLACE -->
+        <div id="tab-weapon-shop" class="tab-panel hidden space-y-6">
+         <!-- BARIS KONTROL MARKETPLACE: FILTER KIRI + SEARCH & SORT KANAN -->
+          <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-[#0e1017] p-3.5 rounded-2xl border border-[#1e2230] shadow-sm">
+            <!-- Kiri: Tombol Filter Kategori -->
+            <div class="flex flex-wrap items-center gap-1.5 text-xs font-semibold" id="category-filters">
+              <button onclick="filterProducts('all')" class="cat-btn bg-red-600 text-white px-4 py-2 rounded-xl transition shadow-sm font-semibold">All</button>
+              <button onclick="filterProducts('weapon')" class="cat-btn bg-[#131622] text-zinc-400 hover:text-white px-4 py-2 border border-[#1e2230] rounded-xl transition font-semibold">Weapon</button>
+              <button onclick="filterProducts('ammo')" class="cat-btn bg-[#131622] text-zinc-400 hover:text-white px-4 py-2 border border-[#1e2230] rounded-xl transition font-semibold">Ammo</button>
+              <button onclick="filterProducts('vest')" class="cat-btn bg-[#131622] text-zinc-400 hover:text-white px-4 py-2 border border-[#1e2230] rounded-xl transition font-semibold">Vest</button>
+              <button onclick="filterProducts('durgs')" class="cat-btn bg-[#131622] text-zinc-400 hover:text-white px-4 py-2 border border-[#1e2230] rounded-xl transition font-semibold">Drugs</button>
+              <button onclick="filterProducts('attachments')" class="cat-btn bg-[#131622] text-zinc-400 hover:text-white px-4 py-2 border border-[#1e2230] rounded-xl transition font-semibold">Attachment</button>
+              <button onclick="filterProducts('tool-heist')" class="cat-btn bg-[#131622] text-zinc-400 hover:text-white px-4 py-2 border border-[#1e2230] rounded-xl transition font-semibold">Tool Heist</button>
+            </div>
+
+            <!-- Kanan: Kotak Pencarian (Search) & Dropdown Urutan (Sort) -->
+            <div class="flex items-center gap-2 shrink-0 w-full xl:w-auto">
+              <div class="relative flex-grow sm:w-56">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="marketplace-search-input" oninput="handleMarketplaceSearch(this.value)" placeholder="Search for an item..." class="w-full bg-[#131622] border border-[#1e2230] text-white text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-red-500 transition placeholder-zinc-500">
+              </div>
+              <select id="marketplace-sort-select" onchange="handleMarketplaceSort(this.value)" class="bg-[#131622] border border-[#1e2230] text-zinc-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-red-500 font-semibold cursor-pointer transition shrink-0">
+                <option value="name_asc">🔤 Name (A - Z)</option>
+                <option value="price_desc">💎 Price ( Highest )</option>
+                <option value="price_asc">🏷️ Price ( Lowest )</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="product-grid"></div>
+        </div>
+
+        <!-- 2. PROCESSING (MY ORDERS) -->
+        <div id="tab-my-orders" class="tab-panel hidden space-y-4">
+          <div class="bg-[#0e1017] border border-[#1e2230] p-6 rounded-2xl">
+            <h3 class="text-base font-bold text-white mb-4">Order Processing Status</h3>
+            <div id="my-orders-list" class="space-y-3 text-xs"></div>
+          </div>
+        </div>
+
+        <!-- 3. DASHBOARD -->
+        <div id="tab-admin-dashboard" class="tab-panel hidden space-y-8">
+          
+          <!-- TOP 4 STATS CARDS -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div class="bg-[#0e1017] p-5 rounded-2xl border border-[#1e2230] flex flex-col justify-between">
+              <div class="flex items-center justify-between pb-3 mb-3 border-b border-[#1e2230]">
+                <span class="text-xs font-semibold text-zinc-400">Top Resident Spender</span>
+                <div class="p-1.5 bg-amber-500/10 text-amber-400 rounded-lg"><i data-lucide="crown" class="w-4 h-4"></i></div>
+              </div>
+              <div>
+                <div id="hq-top-spender-name" class="text-lg font-bold text-white truncate">None</div>
+                <div id="hq-top-spender-val" class="text-xs text-amber-400 font-medium mt-0.5">$0 <span class="text-zinc-500 font-normal">total</span></div>
+              </div>
+            </div>
+
+            <div class="bg-[#0e1017] p-5 rounded-2xl border border-[#1e2230] flex flex-col justify-between">
+              <div class="flex items-center justify-between pb-3 mb-3 border-b border-[#1e2230]">
+                <span class="text-xs font-semibold text-zinc-400">Total Expenditure per Person</span>
+                <div class="p-1.5 bg-purple-500/10 text-purple-400 rounded-lg"><i data-lucide="building-2" class="w-4 h-4"></i></div>
+              </div>
+              <div>
+                <div id="hq-org-spending" class="text-2xl font-bold font-tech text-white">$0</div>
+                <div class="text-[11px] text-zinc-500 mt-0.5">All transactions completed.</div>
+              </div>
+            </div>
+
+            <div class="bg-[#0e1017] p-5 rounded-2xl border border-[#1e2230] flex flex-col justify-between">
+              <div class="flex items-center justify-between pb-3 mb-3 border-b border-[#1e2230]">
+                <span class="text-xs font-semibold text-zinc-400">Crafting Activities</span>
+                <div class="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg"><i data-lucide="cpu" class="w-4 h-4"></i></div>
+              </div>
+              <div>
+                <div class="text-base font-bold text-white truncate">None</div>
+                <div class="text-[11px] text-zinc-500 mt-0.5">There are no crafting logs yet.</div>
+              </div>
+            </div>
+
+            <div class="bg-[#0e1017] p-5 rounded-2xl border border-[#1e2230] flex flex-col justify-between">
+              <div class="flex items-center justify-between pb-3 mb-3 border-b border-[#1e2230]">
+                <span class="text-xs font-semibold text-zinc-400">Critical Stock Alert</span>
+                <div class="p-1.5 bg-red-500/10 text-red-500 rounded-lg"><i data-lucide="alert-triangle" class="w-4 h-4"></i></div>
+              </div>
+              <div>
+                <div id="hq-critical-stock" class="text-2xl font-bold font-tech text-white">0</div>
+                <div class="text-[11px] text-zinc-500 mt-0.5">All stock is secure.</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- SPENDING LEADERBOARD FULL WIDTH -->
+          <div class="bg-[#0e1017] p-6 rounded-2xl border border-[#1e2230]">
+            <div class="flex items-center justify-between border-b border-[#1e2230] pb-4 mb-4">
+              <div>
+                <h3 class="font-bold text-base text-white">Spending Leaderboard</h3>
+                <p class="text-xs text-zinc-400 mt-0.5">List of residents with the highest spending contributions at the TON</p>
+              </div>
+              <span class="px-3 py-1 bg-[#131622] border border-[#1e2230] text-zinc-300 font-semibold text-xs rounded-lg">All-Time</span>
+            </div>
+            <div id="spending-leaderboard-list" class="space-y-3 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin"></div>
+          </div>
+
+          <!-- ================================================================= -->
+          <!-- 🛠️ MODERATOR & SECURITY CENTER (PANIC BUTTON & KPI) -->
+          <!-- ================================================================= -->
+          <div class="pt-2">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Moderator & Security Center</h3>
+              </div>
+              <span class="text-[11px] text-zinc-500">Special Authorization</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              <!-- 1. PANIC BUTTON PANEL ONLY -->
+              <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between pb-3 mb-4 border-b border-[#1e2230]">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i>
+                      <h3 class="font-bold text-sm text-white">Emergency Control</h3>
+                    </div>
+                    <span class="text-[10px] font-semibold text-red-400 bg-red-500/10 px-2.5 py-0.5 rounded-full border border-red-500/20">Lockdown Switch</span>
+                  </div>
+                  
+                  <p class="text-xs text-zinc-400 mb-6 leading-relaxed">
+                    Use this emergency button to disable all resident shopping activity in the event of an incident/ <span class="text-zinc-200 font-semibold">BUG</span>.
+                  </p>
+                </div>
+                
+                <div class="pt-4 border-t border-[#1e2230]/60">
+                  <button onclick="toggleVaultLockdown()" id="btn-lockdown-container" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-semibold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-red-600/20 transition flex items-center justify-center gap-2">
+                    <i id="lockdown-btn-icon" data-lucide="lock" class="w-4 h-4"></i>
+                    <span id="lockdown-btn-text">Activate Emergency Mode</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 2. STAFF KPI LEADERBOARD -->
+              <div class="lg:col-span-2 bg-[#0e1017] border border-[#1e2230] rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between pb-4 mb-4 border-b border-[#1e2230]">
+                    <div>
+                      <h3 class="font-bold text-base text-white">Internal Productivity</h3>
+                      <p class="text-xs text-zinc-400 mt-0.5">Monitor activities related to processing resident orders.</p>
+                    </div>
+                    <button onclick="renderStaffKPITable()" class="text-xs font-medium text-zinc-400 hover:text-white flex items-center gap-1.5 transition bg-[#131622] px-3 py-1.5 rounded-xl border border-[#1e2230]">
+                      <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i> Refresh
+                    </button>
+                  </div>
+                  
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                      <thead>
+                        <tr class="border-b border-[#1e2230] text-[11px] font-semibold text-zinc-500 uppercase">
+                          <th class="pb-3">Admin</th>
+                          <th class="pb-3 text-center">Approved</th>
+                          <th class="pb-3 text-center">Rejected</th>
+                          <th class="pb-3 text-center">Accuracy</th>
+                          <th class="pb-3 text-right">Total Cases Handled</th>
+                        </tr>
+                      </thead>
+                      <tbody id="staff-kpi-table" class="text-xs divide-y divide-[#1e2230]">
+                        <tr><td colspan="5" class="py-8 text-center text-zinc-500">Mengkalkulasi data performa staf...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                <div class="mt-6 pt-3 border-t border-[#1e2230] text-[11px] text-zinc-500 flex justify-between items-center">
+                  <span>*Accuracy is calculated based on the ratio of successfully approved orders.</span>
+                  <span class="text-emerald-400 font-medium">Automated Tracking</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 4. PROCESSING ORDER -->
+        <div id="tab-transaction-process" class="tab-panel hidden space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#0e1017] p-4 rounded-2xl border border-[#1e2230]">
+            <div class="flex items-center gap-3">
+              <span class="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold text-xs rounded-xl flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                Today's Pending: <span id="tx-pending-today-count" class="font-bold">0</span>
+              </span>
+              <span class="text-xs text-zinc-500">Refreshed: <span id="tx-refreshed-time" class="text-zinc-300">Just now</span></span>
+            </div>
+            <button onclick="renderTxProcessTable(true)" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#131622] border border-[#1e2230] hover:border-zinc-500 text-zinc-300 hover:text-white text-xs font-semibold rounded-xl transition">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-amber-400"></i> Refresh Data
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-[#0e1017] p-4 rounded-2xl border border-[#1e2230]">
+            <div class="md:col-span-2 relative">
+              <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input type="text" id="tx-search-input" oninput="handleTxSearch(this.value)" placeholder="Search for Transaction ID or Buyer Name..." class="w-full bg-[#131622] border border-[#1e2230] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500">
+            </div>
+            <div>
+              <select id="tx-sort-select" onchange="handleTxSort(this.value)" class="w-full bg-[#131622] border border-[#1e2230] rounded-xl px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-red-500 font-medium">
+                <option value="newest">Latest</option>
+                <option value="oldest">Oldest</option>
+                <option value="highest">Highest Amount ($)</option>
+                <option value="lowest">Lowest Amount ($)</option>
+              </select>
+            </div>
+            <div>
+              <select id="tx-item-filter" onchange="handleTxItemFilter(this.value)" class="w-full bg-[#131622] border border-[#1e2230] rounded-xl px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-red-500 font-medium">
+                <option value="all">All Product Categories</option>
+                <option value="Weapon">Weapon</option>
+                <option value="Ammo">Ammo</option>
+                <option value="Vest">Vest</option>
+                <option value="Drugs">Drugs</option>
+                <option value="Attachment">Attachment</option>
+                <option value="Tool Heist">Tool Heist</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 bg-[#0e1017] p-3 rounded-2xl border border-[#1e2230] font-semibold text-xs">
+            <button id="tx-btn-Pending" onclick="filterTxStatus('Pending')" class="bg-amber-500 text-black px-4 py-1.5 rounded-xl transition flex items-center gap-1.5">
+              Pending <span id="count-Pending" class="bg-black/20 px-1.5 py-0.2 rounded-full text-[10px]">0</span>
+            </button>
+            <button id="tx-btn-Waiting Release" onclick="filterTxStatus('Waiting Release')" class="bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-1.5 rounded-xl transition flex items-center gap-1.5">
+              Waiting Release <span id="count-Waiting Release" class="bg-white/10 px-1.5 py-0.2 rounded-full text-[10px]">0</span>
+            </button>
+            <button id="tx-btn-Released" onclick="filterTxStatus('Released')" class="bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-1.5 rounded-xl transition flex items-center gap-1.5">
+              Released <span id="count-Released" class="bg-white/10 px-1.5 py-0.2 rounded-full text-[10px]">0</span>
+            </button>
+            <button id="tx-btn-Approved" onclick="filterTxStatus('Approved')" class="bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-1.5 rounded-xl transition flex items-center gap-1.5">
+              Approved <span id="count-Approved" class="bg-white/10 px-1.5 py-0.2 rounded-full text-[10px]">0</span>
+            </button>
+            <button id="tx-btn-Rejected" onclick="filterTxStatus('Rejected')" class="bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-1.5 rounded-xl transition flex items-center gap-1.5">
+              Rejected <span id="count-Rejected" class="bg-white/10 px-1.5 py-0.2 rounded-full text-[10px]">0</span>
+            </button>
+            <button id="tx-btn-All" onclick="filterTxStatus('All')" class="bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-1.5 rounded-xl transition ml-auto">
+              Show All
+            </button>
+          </div>
+
+          <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl overflow-x-auto shadow-sm">
+            <table class="w-full text-left border-collapse min-w-[950px]">
+              <thead>
+                <tr class="border-b border-[#1e2230] text-zinc-500 font-semibold text-[11px] uppercase bg-[#131622]">
+                  <th class="p-4">TXID</th>
+                  <th class="p-4">Name</th>
+                  <th class="p-3.5">Rank</th>
+                  <th class="p-4">Package</th>
+                  <th class="p-4">Qty</th>
+                  <th class="p-4">Total</th>
+                  <th class="p-4">Processed by</th>
+                  <th class="p-4">Time</th>
+                  <th class="p-4">Duration</th>
+                  <th class="p-4">Priority</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4 text-right">action</th>
+                </tr>
+              </thead>
+              <tbody id="transaction-process-table" class="divide-y divide-[#1e2230] text-xs"></tbody>
+            </table>
+          </div>
+
+          <div class="flex items-center justify-between bg-[#0e1017] p-4 rounded-2xl border border-[#1e2230] text-xs text-zinc-400">
+            <div>
+              page <span id="tx-current-page-num" class="font-bold text-white">1</span> from <span id="tx-total-page-num" class="font-bold text-white">1</span>
+            </div>
+            <div class="flex items-center gap-2 font-semibold">
+              <button onclick="changeTxPage(-1)" class="px-3 py-1 bg-[#131622] border border-[#1e2230] hover:border-zinc-500 text-zinc-300 hover:text-white rounded-lg disabled:opacity-30" id="tx-btn-prev">&lt; Prev</button>
+              <span id="tx-page-numbers-container" class="flex gap-1"></span>
+              <button onclick="changeTxPage(1)" class="px-3 py-1 bg-[#131622] border border-[#1e2230] hover:border-zinc-500 text-zinc-300 hover:text-white rounded-lg disabled:opacity-30" id="tx-btn-next">Next &gt;</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <span>Per page:</span>
+              <select id="tx-per-page" onchange="handleTxPerPage(this.value)" class="bg-[#131622] border border-[#1e2230] rounded-lg px-2.5 py-1 text-white text-xs font-semibold focus:outline-none focus:border-red-500">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+<!-- 5. LOGS INVENTORY -->
+<div id="tab-vault-stock" class="tab-panel hidden space-y-6">
+  <div class="bg-[#0e1017] p-6 rounded-2xl border border-[#1e2230]">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1e2230] pb-4 mb-6 gap-3">
+      <div>
+        <h2 class="text-base font-bold text-white">Log Inventory & Stock Catalog</h2>
+        <p class="text-xs text-zinc-400 mt-0.5">Safe contents management <span id="total-inventory-count" class="text-white font-semibold">0</span> total active items</p>
+      </div>
+      <div id="inventory-action-bar" class="flex items-center gap-2 text-xs font-semibold">
+        <!-- Tombol Export & Import Excel telah dihapus -->
+        <button onclick="addNewInventoryItem()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl flex items-center gap-1.5 transition shadow-lg shadow-red-600/20">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Item
+        </button>
+      </div>
+    </div>
+
+    <!-- Tombol Filter Disamakan Persis dengan Marketplace -->
+    <div class="flex flex-wrap gap-2 mb-6 text-xs font-semibold" id="vault-inventory-filters">
+      <button onclick="filterVaultInventory('all')" id="inv-btn-all" class="cat-btn-inv bg-red-600 text-white px-4 py-2 rounded-xl transition shadow-sm font-semibold">All</button>
+      <button onclick="filterVaultInventory('weapon')" id="inv-btn-weapon" class="cat-btn-inv bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-2 rounded-xl transition font-semibold">Weapon</button>
+      <button onclick="filterVaultInventory('ammo')" id="inv-btn-ammo" class="cat-btn-inv bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-2 rounded-xl transition font-semibold">Ammo</button>
+      <button onclick="filterVaultInventory('vest')" id="inv-btn-vest" class="cat-btn-inv bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-2 rounded-xl transition font-semibold">Vest</button>
+      <button onclick="filterVaultInventory('durgs')" id="inv-btn-durgs" class="cat-btn-inv bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-2 rounded-xl transition font-semibold">Drugs</button>
+      <button onclick="filterVaultInventory('attachments')" id="inv-btn-attachments" class="cat-btn-inv bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-2 rounded-xl transition font-semibold">Attachment</button>
+      <button onclick="filterVaultInventory('tool-heist')" id="inv-btn-tool-heist" class="cat-btn-inv bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-2 rounded-xl transition font-semibold">Tool Heist</button>
+    </div>
+
+    <div id="vault-inventory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+  </div>
+</div>
+
+        <!-- 6. RELEASE TRANSACTION -->
+        <div id="tab-release-outstanding" class="tab-panel hidden space-y-6">
+          <div class="bg-[#0e1017] p-6 rounded-2xl border border-[#1e2230]">
+            <div class="border-b border-[#1e2230] pb-4 mb-6">
+              <h2 class="text-base font-bold text-white">Release Transaction & Held Balance</h2>
+              <p class="text-xs text-zinc-400 mt-0.5">Manage orders where stock has already been deducted but final settlement to the vault balance is pending.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div class="bg-[#131622] p-5 rounded-xl border border-[#1e2230] flex justify-between items-center">
+                <div>
+                  <span class="text-[11px] font-semibold text-zinc-400 uppercase">Total Held Balance</span>
+                  <div id="out-total-held" class="text-3xl font-bold font-tech text-amber-400 mt-1">$0</div>
+                  <span class="text-[11px] text-zinc-500">The stock has been shipped.</span>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-lg">$</div>
+              </div>
+
+              <div class="bg-[#131622] p-5 rounded-xl border border-[#1e2230] flex justify-between items-center">
+                <div>
+                  <span class="text-[11px] font-semibold text-zinc-400 uppercase">Awaiting Release Authorization</span>
+                  <div id="out-waiting-count" class="text-3xl font-bold font-tech text-white mt-1">0</div>
+                  <span class="text-[11px] text-zinc-500">Waiting for admin confirmation</span>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400"><i data-lucide="clock" class="w-5 h-5"></i></div>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-4 text-xs font-semibold">
+              <div class="w-72">
+                <input type="text" placeholder="Search for Order ID..." class="w-full bg-[#131622] border border-[#1e2230] text-zinc-300 px-3.5 py-2 rounded-xl focus:outline-none focus:border-red-500">
+              </div>
+              <div id="outstanding-action-bar" class="flex gap-2">
+                <button onclick="releaseAllOutstanding()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl uppercase transition shadow-sm"><i data-lucide="dollar-sign" class="w-3.5 h-3.5 inline"></i> Release All</button>
+                <button onclick="updateDashboardData()" class="bg-[#131622] border border-[#1e2230] hover:text-white text-zinc-400 px-4 py-2 rounded-xl uppercase transition"><i data-lucide="refresh-cw" class="w-3.5 h-3.5 inline"></i> Refresh</button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto border border-[#1e2230] rounded-xl">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-[#131622] text-zinc-500 font-semibold uppercase border-b border-[#1e2230] text-[11px]">
+                  <tr>
+                    <th class="p-3.5 w-8"><input type="checkbox" class="rounded bg-zinc-800 border-[#1e2230]"></th>
+                    <th class="p-3.5">Approval Date</th>
+                    <th class="p-3.5">Order ID</th>
+                    <th class="p-3.5">Name</th>
+                    <th class="p-3.5">Item Cut</th>
+                    <th class="p-3.5">Approved by</th>
+                    <th class="p-3.5">Held Balance</th>
+                    <th class="p-3.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="release-outstanding-table" class="divide-y divide-[#1e2230]"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. HISTORY TRANSACTION -->
+        <div id="tab-vault-history" class="tab-panel hidden space-y-6">
+          <div class="bg-[#0e1017] p-6 rounded-2xl border border-[#1e2230] space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1e2230] pb-4 gap-3">
+              <div>
+                <h2 class="text-base font-bold text-white">Transaction History & Cash Flow</h2>
+                <p class="text-xs text-zinc-400 mt-0.5">Complete history of cash inflows and outflows for The Old Norse</p>
+              </div>
+              <button onclick="renderVaultHistory(true)" class="flex items-center gap-1.5 px-4 py-2 bg-[#131622] border border-[#1e2230] hover:border-zinc-500 text-zinc-300 hover:text-white text-xs font-semibold rounded-xl transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i> Refresh History
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <!-- Kotak 1: Total Uang Masuk -->
+  <div class="bg-[#131622] p-5 rounded-2xl border border-[#1e2230] flex justify-between items-center gap-4 shadow-sm">
+    <div class="min-w-0 flex-1">
+      <span class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider block truncate">Total Inflow</span>
+      <div id="hist-total-inflow" class="text-2xl font-bold font-tech text-emerald-400 my-1 truncate">$0</div>
+      <span class="text-[11px] text-zinc-500 block truncate">Order completed & released</span>
+    </div>
+    <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+      <i data-lucide="trending-up" class="w-5 h-5"></i>
+    </div>
+  </div>
+
+  <!-- Kotak 2: Transaksi Berhasil -->
+  <div class="bg-[#131622] p-5 rounded-2xl border border-[#1e2230] flex justify-between items-center gap-4 shadow-sm">
+    <div class="min-w-0 flex-1">
+      <span class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider block truncate">Transaction Successful</span>
+      <div id="hist-total-count" class="text-2xl font-bold font-tech text-white my-1 truncate">0</div>
+      <span class="text-[11px] text-zinc-500 block truncate">Successfully processed</span>
+    </div>
+    <div class="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+      <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+    </div>
+  </div>
+
+  <!-- Kotak 3: Pesanan Dibatalkan -->
+  <div class="bg-[#131622] p-5 rounded-2xl border border-[#1e2230] flex justify-between items-center gap-4 shadow-sm">
+    <div class="min-w-0 flex-1">
+      <span class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider block truncate">Order Cancelled</span>
+      <div id="hist-total-rejected" class="text-2xl font-bold font-tech text-red-500 my-1 truncate">0</div>
+      <span class="text-[11px] text-zinc-500 block truncate">Rejected or refunded</span>
+    </div>
+    <div class="w-11 h-11 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shrink-0">
+      <i data-lucide="x-circle" class="w-5 h-5"></i>
+    </div>
+  </div>
+</div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-3 bg-[#131622] p-3.5 rounded-xl border border-[#1e2230] text-xs">
+              <div class="relative w-full sm:w-80">
+                <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="hist-search-input" oninput="renderVaultHistory()" placeholder="Search for TXID or Name..." class="w-full bg-[#0e1017] border border-[#1e2230] rounded-xl pl-9 pr-3 py-1.5 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500">
+              </div>
+              <div class="flex items-center gap-2 w-full sm:w-auto font-semibold">
+                <span class="text-zinc-400">Status Filters:</span>
+                <select id="hist-status-filter" onchange="renderVaultHistory()" class="bg-[#0e1017] border border-[#1e2230] rounded-xl px-3 py-1.5 text-zinc-300 focus:outline-none focus:border-emerald-500">
+                  <option value="ALL">Full History</option>
+                  <option value="Approved">Approved / Inflow ($)</option>
+                  <option value="Released">Released</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto border border-[#1e2230] rounded-xl">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-[#131622] text-zinc-500 font-semibold uppercase border-b border-[#1e2230] text-[11px]">
+                  <tr>
+                    <th class="p-3.5">Time</th>
+                    <th class="p-3.5">TXID</th>
+                    <th class="p-3.5">Name</th>
+                    <th class="p-3.5">Rank</th>
+                    <th class="p-3.5">Ordered items</th>
+                    <th class="p-3.5">Total Amount</th>
+                    <th class="p-3.5">Status</th>
+                    <th class="p-3.5 text-right">Authorized By</th>
+                  </tr>
+                </thead>
+                <tbody id="vault-history-table" class="divide-y divide-[#1e2230]"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. VAULT DATA (UPLOAD PROOF) -->
+        <div id="tab-stock-proof" class="tab-panel hidden space-y-6">
+          <div class="bg-[#0e1017] p-6 rounded-2xl border border-[#1e2230] space-y-6">
+            <div class="border-b border-[#1e2230] pb-4">
+              <h2 class="text-base font-bold text-white">Data Vault & Photo Proof Upload</h2>
+              <p class="text-xs text-zinc-400 mt-0.5">Attach a screenshot of the stock inventory to validate the vault database log sent to Discord.</p>
+            </div>
+
+            <div class="bg-[#131622] p-5 rounded-xl border border-[#1e2230]">
+              <div class="flex flex-wrap justify-between items-center mb-4 text-xs font-semibold gap-2">
+                <span class="text-zinc-400" id="proof-image-count-text">0 / 10 foto dipilih</span>
+                <div id="proof-action-bar" class="flex items-center gap-2">
+                  <input type="file" id="proof-file-input" accept="image/*" multiple onchange="handleProofFileUpload(event)" class="hidden">
+                  <button onclick="document.getElementById('proof-file-input').click()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i> Upload from PC/mobile
+                  </button>
+                  <button onclick="promptAddProofUrl()" id="btn-add-proof" class="bg-[#0e1017] border border-[#1e2230] hover:border-zinc-500 text-zinc-300 hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition">
+                    <i data-lucide="link" class="w-4 h-4"></i> Add Photo URL
+                  </button>
+                </div>
+              </div>
+              <div id="proof-thumbnails-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label class="block text-zinc-400 font-semibold mb-1">Verification Date & Time (Automatic)</label>
+                <input type="text" id="proof-date-auto" value="" readonly class="w-full bg-[#131622] border border-[#1e2230] text-zinc-400 px-3.5 py-2.5 rounded-xl opacity-70 cursor-not-allowed">
+              </div>
+              <div>
+                <label class="block text-zinc-400 font-semibold mb-1">Name of Staff Member Uploading</label>
+                <input type="text" id="proof-member-name" value="ADMIN" readonly class="w-full bg-[#131622] border border-[#1e2230] text-white font-semibold px-3.5 py-2.5 rounded-xl opacity-80 cursor-not-allowed uppercase">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-zinc-400 font-semibold mb-1">Details & Verification Notes</label>
+                <input type="text" id="proof-details-input" placeholder="Briefly explain what this screenshot verifies..." class="w-full bg-[#131622] border border-[#1e2230] text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-red-500">
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-[#1e2230] text-xs font-semibold">
+              <button onclick="clearProofForm()" class="px-5 py-2.5 bg-[#131622] text-zinc-400 hover:text-white rounded-xl border border-[#1e2230] transition">Cancel</button>
+              <button onclick="submitStockProof()" class="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl transition shadow-lg shadow-red-600/20">Save & Send Log to Discord</button>
+            </div>
+
+            <div class="pt-4 space-y-3">
+              <span class="text-xs font-bold text-white uppercase block">Verification Log History</span>
+              <div class="overflow-x-auto border border-[#1e2230] rounded-xl shadow-sm">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-[#131622] text-zinc-500 font-semibold uppercase border-b border-[#1e2230] text-[11px]">
+                    <tr>
+                      <th class="p-3.5">Name</th>
+                      <th class="p-3.5">Time</th>
+                      <th class="p-3.5">Verification Detail</th>
+                      <th class="p-3.5 text-center">Photographic Evidence</th>
+                      <th class="p-3.5 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stock-proof-history-table" class="divide-y divide-[#1e2230]"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 9. LOGS METAL SCRAP -->
+        <div id="tab-metal-scrap" class="tab-panel hidden space-y-6">
+          <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1e2230] pb-4 mb-6 gap-3">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-amber-500/10 text-amber-400 rounded-lg"><i data-lucide="layers" class="w-5 h-5"></i></div>
+                <div>
+                  <h2 class="text-base font-bold text-white">Logs Metal Scrap & Inventaris</h2>
+                  <p class="text-xs text-zinc-400 mt-0.5">Official records of scrap iron material intake and usage for crafting.</p>
+                </div>
+              </div>
+              <div id="scrap-action-bar" class="flex gap-2 text-xs font-semibold">
+                <button onclick="addScrapLog('IN')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i> Record Income</button>
+                <button onclick="addScrapLog('OUT')" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm"><i data-lucide="minus" class="w-4 h-4"></i> Record Expenses</button>
+              </div>
+            </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <!-- Kotak 1: Total Scrap Tersedia -->
+              <div class="bg-[#131622] p-5 rounded-2xl border border-[#1e2230] flex justify-between items-center gap-4 shadow-sm">
+                <div class="min-w-0 flex-1">
+                  <span class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider block truncate">Total Metal Scrap Available</span>
+                  <div id="scrap-total-stock" class="text-2xl font-bold font-tech text-white my-1 truncate">0 Units</div>
+                  <span class="text-[11px] text-zinc-500 block truncate">Current physical Metal Scrap stock</span>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                  <i data-lucide="box" class="w-5 h-5"></i>
+                </div>
+              </div>
+
+              <!-- Kotak 2: Total Pemasukan (In) -->
+              <div class="bg-[#131622] p-5 rounded-2xl border border-[#1e2230] flex justify-between items-center gap-4 shadow-sm">
+                <div class="min-w-0 flex-1">
+                  <span class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider block truncate">Total Inflow (In)</span>
+                  <div id="scrap-total-in" class="text-2xl font-bold font-tech text-emerald-400 my-1 truncate">+ 0 Units</div>
+                  <span class="text-[11px] text-zinc-500 block truncate">Accumulation of incoming metal scrap</span>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                  <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+                </div>
+              </div>
+
+              <!-- Kotak 3: Total Pengeluaran (Out) -->
+              <div class="bg-[#131622] p-5 rounded-2xl border border-[#1e2230] flex justify-between items-center gap-4 shadow-sm">
+                <div class="min-w-0 flex-1">
+                  <span class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider block truncate">Total Expenditure (Out)</span>
+                  <div id="scrap-total-out" class="text-2xl font-bold font-tech text-red-500 my-1 truncate">- 0 Units</div>
+                  <span class="text-[11px] text-zinc-500 block truncate">Accumulated scrap metal outflow</span>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shrink-0">
+                  <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto border border-[#1e2230] rounded-xl shadow-sm">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-[#131622] text-zinc-500 font-semibold uppercase border-b border-[#1e2230] text-[11px]">
+                  <tr>
+                    <th class="p-3.5">Date & Time</th>
+                    <th class="p-3.5">Type Logs</th>
+                    <th class="p-3.5">Amount (Qty)</th>
+                    <th class="p-3.5">Explanation / Reason</th>
+                    <th class="p-3.5 text-right">Recorded by</th>
+                  </tr>
+                </thead>
+                <tbody id="metal-scrap-table" class="divide-y divide-[#1e2230]"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10. LIST ROSTER THE OLD NORSE -->
+        <div id="tab-the-old-norse" class="tab-panel hidden space-y-6">
+          <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1e2230] pb-4 mb-6 gap-3">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-red-500/10 text-red-500 rounded-lg"><i data-lucide="users" class="w-5 h-5"></i></div>
+                <div>
+                  <h2 class="text-base font-bold text-white">List Roster The Old Norse</h2>
+                  <p class="text-xs text-zinc-400 mt-0.5">List of official internal and family members of TON</p>
+                </div>
+              </div>
+              
+              <div class="w-48">
+                <select id="catalog-filter-dropdown" onchange="switchCatalogTab(this.value)" class="w-full bg-[#131622] border border-[#1e2230] text-white font-semibold px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-red-500 transition">
+                  <option value="All">All Members</option>
+                  <option value="Internal">Internal</option>
+                  <option value="Family" selected>Family</option>
+                </select>
+              </div>
+            </div>
+            
+            <p class="text-xs text-zinc-400 mb-4">List of active members <span id="roster-admin-note" class="admin-only hidden text-emerald-400 font-medium">The admin reserves the right to change ranks, move divisions, and delete member data.</span></p>
+
+            <div class="overflow-x-auto border border-[#1e2230] rounded-xl shadow-sm">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-[#131622] text-zinc-500 font-semibold uppercase border-b border-[#1e2230] text-[11px]">
+                  <tr>
+                    <th class="p-3.5">Member (IC & Account)</th>
+                    <th class="p-3.5">Division / Category</th>
+                    <th class="p-3.5 w-56">Rank / Position</th>
+                    <th id="th-roster-actions" class="p-3.5 text-right admin-only hidden">Admin Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ton-catalog-table" class="divide-y divide-[#1e2230]"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 11. PROFILE ACCOUNT IC -->
+        <div id="tab-profile" class="tab-panel hidden space-y-6">
+          <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-6">
+            <div class="flex items-center gap-2.5 border-b border-[#1e2230] pb-4 mb-6">
+              <div class="p-2 bg-blue-500/10 text-blue-400 rounded-lg"><i data-lucide="user-check" class="w-5 h-5"></i></div>
+              <div>
+                <h2 class="text-base font-bold text-white">Profile Account IC (In-Character)</h2>
+                <p class="text-xs text-zinc-400 mt-0.5">Manage resident identities and employment details.</p>
+              </div>
+            </div>
+            
+            <div class="bg-[#131622] border border-[#1e2230] p-6 rounded-xl mb-6 flex flex-col md:flex-row items-center gap-6">
+              <div class="w-24 h-24 rounded-full border-2 border-red-500/50 bg-red-500/10 overflow-hidden shrink-0 flex items-center justify-center shadow-lg">
+                <img id="profile-avatar-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=USER" alt="Avatar" class="w-full h-full object-cover">
+              </div>
+              <div class="text-center md:text-left flex-grow">
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-2.5 mb-1">
+                  <h3 id="profile-name" class="text-xl font-bold text-white uppercase tracking-wide">USER</h3>
+                  <span id="profile-rank-badge" class="px-2.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full text-xs font-semibold uppercase">SOLDIERS</span>
+                </div>
+                <p id="profile-role-detail" class="text-xs text-zinc-400 font-medium">Authorized Member Dossier</p>
+                <p id="profile-group-name" class="text-xs text-red-400 font-medium mt-1">The Old Norse Syndicate Group</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+              <div>
+                <label class="block font-semibold text-zinc-400 mb-1.5">Character Name (IC Name))</label>
+                <input type="text" id="ic-name" placeholder="Contoh: John Wick" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-red-500 font-medium">
+              </div>
+              <div>
+                <label class="block font-semibold text-zinc-400 mb-1.5">Phone Number</label>
+                <input type="text" id="ic-phone" placeholder="Contoh: 555-0192" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-red-500 font-medium">
+              </div>
+              <div>
+                <label class="block font-semibold text-zinc-400 mb-1.5">ID Card ( CID )</label>
+                <input type="text" id="ic-idcard" placeholder="Contoh: TON-9921" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-red-500 font-medium">
+              </div>
+              <div>
+                <label id="ic-job-label" class="block font-semibold text-zinc-400 mb-1.5">Rank</label>
+                <select id="ic-job" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-red-500 font-medium">
+                  <option value="Admin">Admin</option>
+                  <option value="Moderator">Moderator</option>
+                  <option value="Don">Don</option>
+                  <option value="Underboss">Underboss</option>
+                  <option value="Bisnis">Bisnis</option>
+                  <option value="Consigliere">Consigliere</option>
+                  <option value="Captain">Captain</option>
+                  <option value="Capo">Capo</option>
+                  <option value="Soldiers">Soldiers</option>
+                  <option value="Associates">Associates</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-zinc-400 mb-1.5">Upload Photo from Device</label>
+                <input type="file" id="ic-avatar-file" accept="image/*" onchange="handleProfileImageUpload(event)" class="w-full bg-[#131622] border border-[#1e2230] text-zinc-300 px-3 py-2 rounded-xl text-xs">
+              </div>
+              <div>
+                <label class="block font-semibold text-zinc-400 mb-1.5">Or External Profile Photo URL</label>
+                <input type="text" id="ic-avatar" placeholder="Contoh: https://i.imgur.com/foto-anda.png" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-red-500 font-medium">
+              </div>
+            </div>
+
+            <div class="mt-8 flex justify-end">
+              <button onclick="saveUserProfile()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/20">
+                Simpan Perubahan
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 12. MANAGE VOUCHER -->
+        <div id="tab-voucher-manager" class="tab-panel hidden space-y-6">
+          <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-6 space-y-6">
+            
+            <div class="border-b border-[#1e2230] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-purple-500/10 text-purple-400 rounded-lg"><i data-lucide="ticket" class="w-5 h-5"></i></div>
+                <div>
+                  <h2 class="text-base font-bold text-white">Manage Voucher</h2>
+                  <p class="text-xs text-zinc-400 mt-0.5">Manage, activate and set discount promo code quotas for weapon</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-full text-[10px] font-semibold uppercase self-start sm:self-auto">
+                Moderator Only
+              </span>
+            </div>
+
+            <div class="bg-[#131622] p-5 rounded-xl border border-[#1e2230] space-y-4">
+              <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="plus-circle" class="w-4 h-4 text-purple-400"></i> Create New Voucher Code
+              </h3>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-xs">
+                <div>
+                  <label class="block text-zinc-400 uppercase font-semibold mb-1">Voucher Code</label>
+                  <input type="text" id="new-voucher-code" placeholder="Enter Voucher Code" class="w-full bg-[#0e1017] border border-[#1e2230] text-white px-3 py-2 rounded-xl uppercase font-bold focus:outline-none focus:border-purple-500">
+                </div>
+                <div>
+                  <label class="block text-zinc-400 uppercase font-semibold mb-1">Discount Type</label>
+                  <select id="new-voucher-type" class="w-full bg-[#0e1017] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-purple-500">
+                    <option value="percent">Persentase (%)</option>
+                    <option value="nominal">Nominal Uang ($)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-zinc-400 uppercase font-semibold mb-1">Discount Amount</label>
+                  <input type="number" id="new-voucher-val" placeholder="Enter a number" class="w-full bg-[#0e1017] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-purple-500">
+                </div>
+                <div>
+                  <label class="block text-zinc-400 uppercase font-semibold mb-1">Permission for Use</label>
+                  <select id="new-voucher-allowed" class="w-full bg-[#0e1017] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-purple-500">
+                    <option value="don_tier">High-ranking members only (Mod, Don, Admin)</option>
+                    <option value="all">Open to All Members</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-zinc-400 uppercase font-semibold mb-1">Deadline</label>
+                  <select id="new-voucher-duration" class="w-full bg-[#0e1017] border border-purple-500/50 text-purple-300 px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-purple-500">
+                    <option value="0">Without limit(Permanen)</option>
+                    <option value="1">The Next Hour</option>
+                    <option value="6">The Next 6 Hours</option>
+                    <option value="12">The Next 12 Hours</option>
+                    <option value="24">24 Hours (1 Day)</option>
+                    <option value="168">7 Days (1 Week)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs text-zinc-400 uppercase font-semibold mb-1">Brief Description</label>
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <input type="text" id="new-voucher-desc" placeholder="Enter description" class="w-full bg-[#0e1017] border border-[#1e2230] text-white px-3.5 py-2 rounded-xl text-xs focus:outline-none focus:border-purple-500">
+                  <button onclick="createNewVoucher()" class="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition shrink-0 flex items-center justify-center gap-1.5 shadow-sm">
+                    <i data-lucide="check" class="w-4 h-4"></i> Save Voucher
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white uppercase tracking-wider block">List of Active Voucher Codes</span>
+                <span class="text-xs text-zinc-400">Total Voucher: <strong id="total-voucher-count" class="text-purple-400">0</strong></span>
+              </div>
+
+              <div class="overflow-x-auto border border-[#1e2230] rounded-xl shadow-sm">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-[#131622] text-zinc-500 font-semibold uppercase border-b border-[#1e2230] text-[11px]">
+                    <tr>
+                      <th class="p-3.5">Promo Code</th>
+                      <th class="p-3.5">Discount Type & Value</th>
+                      <th class="p-3.5">Rank Limit</th>
+                      <th class="p-3.5">Expiration Date</th>
+                      <th class="p-3.5">Information</th>
+                      <th class="p-3.5 text-center">Active Status</th>
+                      <th class="p-3.5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="voucher-manager-table" class="divide-y divide-[#1e2230]"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 13. ACCOUNT MANAGE -->
+        <div id="tab-account-manager" class="tab-panel hidden space-y-6">
+          <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-6 space-y-6">
+            <div class="border-b border-[#1e2230] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-purple-500/10 text-purple-400 rounded-lg"><i data-lucide="key" class="w-5 h-5"></i></div>
+                <div>
+                  <h2 class="text-base font-bold text-white">Account Manage (Login Credentials)</h2>
+                  <p class="text-xs text-zinc-400 mt-0.5">Create and manage custom login username and password combinations for senior staff.</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-full text-[10px] font-semibold uppercase self-start sm:self-auto">
+                Moderator Only
+              </span>
+            </div>
+
+            <div class="bg-[#131622] p-5 rounded-xl border border-[#1e2230] space-y-4">
+              <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="user-plus" class="w-4 h-4 text-purple-400"></i> Create a New Login Account
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <label class="block text-zinc-400 uppercase font-semibold mb-1">Username Login</label>
+                  <input type="text" id="new-bisnis-user" placeholder="Masukkan Username" class="w-full bg-[#0e1017] border border-[#1e2230] text-white px-3.5 py-2 rounded-xl focus:outline-none focus:border-purple-500">
+                </div>
+                <div>
+                  <label class="block text-zinc-400 uppercase font-semibold mb-1">Password Custom</label>
+                  <input type="text" id="new-bisnis-pass" placeholder="Masukkan Password" class="w-full bg-[#0e1017] border border-[#1e2230] text-white px-3.5 py-2 rounded-xl focus:outline-none focus:border-purple-500">
+                </div>
+                <div>
+                  <label class="block text-zinc-400 uppercase font-semibold mb-1">Rank Assigned</label>
+                  <select id="new-bisnis-rank" class="w-full bg-[#0e1017] border border-[#1e2230] text-purple-300 px-3 py-2 rounded-xl font-semibold focus:outline-none focus:border-purple-500">
+                    <option value="Moderator">Moderator</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Don">Don</option>
+                    <option value="Underboss">Underboss</option>
+                    <option value="Consigliere">Consigliere </option>
+                    <option value="Bisnis">Bisnis </option>
+                    <option value="Hood father">Hood father </option>
+                    <option value="Captain">Captain </option>
+                     <option value="Soldiers">Soldiers </option>
+                      <option value="Associates">Associates </option>
+                  </select>
+                </div>
+                <div class="flex items-end">
+                  <button onclick="addCustomAccount()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2.5 px-4 rounded-xl text-xs uppercase shadow-sm transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i> Save Account
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <span class="text-xs font-bold text-white uppercase tracking-wider block">Daftar Akun Custom Aktif</span>
+              <div class="overflow-x-auto border border-[#1e2230] rounded-xl shadow-sm">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-[#131622] text-zinc-500 font-semibold uppercase border-b border-[#1e2230] text-[11px]">
+                    <tr>
+                      <th class="p-3.5">USERNAME LOGIN</th>
+                      <th class="p-3.5">PASSWORD CUSTOM</th>
+                      <th class="p-3.5">RANK ASSIGNED</th>
+                      <th class="p-3.5 text-right">AKSI</th>
+                    </tr>
+                  </thead>
+                  <tbody id="custom-accounts-table" class="divide-y divide-[#1e2230]"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 14. ACCOUNT BLACKLIST -->
+        <div id="tab-blacklist-manager" class="tab-panel hidden space-y-6">
+          <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-6 space-y-6">
+            <div class="border-b border-[#1e2230] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-red-500/10 text-red-500 rounded-lg"><i data-lucide="shield-alert" class="w-5 h-5"></i></div>
+                <div>
+                  <h2 class="text-base font-bold text-white">Account Blacklist & Freeze Control</h2>
+                  <p class="text-xs text-zinc-400 mt-0.5">Manage the blacklist and freeze the accounts of residents who violate IC/OOC rules.</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-400 rounded-full text-[10px] font-semibold uppercase self-start sm:self-auto">
+                Moderator Only
+              </span>
+            </div>
+
+            <div class="bg-[#131622] p-5 rounded-xl border border-[#1e2230] space-y-4">
+              <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="user-x" class="w-4 h-4"></i> Freeze Residents' Accounts
+              </h3>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <input type="text" id="new-blacklist-username" placeholder="Enter the username / IC name of the person violating the rules..." class="flex-grow bg-[#0e1017] border border-[#1e2230] text-white px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-red-500">
+                <button onclick="addBlacklistUser()" class="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white font-semibold text-xs uppercase tracking-wider rounded-xl transition shrink-0 shadow-sm">
+                  Account Blacklist
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white uppercase tracking-wider block">List of Blacklisted Accounts</span>
+                <span class="text-xs text-zinc-400">Total Blacklist: <strong id="total-blacklist-count" class="text-red-500">0</strong></span>
+              </div>
+              <div class="overflow-x-auto border border-[#1e2230] rounded-xl shadow-sm">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-[#131622] text-zinc-500 font-semibold uppercase border-b border-[#1e2230] text-[11px]">
+                    <tr>
+                      <th class="p-3.5">Target Username</th>
+                      <th class="p-3.5 text-right">Recovery Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="blacklist-users-table" class="divide-y divide-[#1e2230]">
+                    <tr><td colspan="2" class="p-6 text-center text-zinc-500">No accounts have been frozen yet.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- WADAH TOAST NOTIFICATION -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- CUSTOM CONFIRM MODAL -->
+  <div id="custom-confirm-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[250] hidden flex items-center justify-center p-4 transition-opacity">
+    <div id="custom-confirm-box" class="w-full max-w-sm bg-[#0e1017] border border-[#1e2230] rounded-2xl shadow-2xl p-6 text-center relative overflow-hidden transform scale-95 opacity-0 transition-all duration-200 font-sans">
+      <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4 text-red-500">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+      </div>
+      <h3 id="custom-confirm-title" class="text-base font-bold text-white uppercase tracking-wider mb-2">Konfirmasi Tindakan</h3>
+      <p id="custom-confirm-message" class="text-xs text-zinc-400 leading-relaxed mb-6">Are you sure you want to proceed with this action? Deleted data cannot be recovered.</p>
+      <div class="grid grid-cols-2 gap-3 font-semibold text-xs uppercase">
+        <button onclick="closeCustomConfirm()" class="w-full py-2.5 bg-[#131622] hover:bg-[#1e2230] text-zinc-300 hover:text-white rounded-xl transition">
+          Cancel
+        </button>
+        <button id="custom-confirm-btn-yes" class="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl shadow-lg shadow-red-600/20 transition">
+          Yes, go ahead.
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD ITEM MODAL -->
+  <div id="add-item-modal" class="fixed inset-0 z-[240] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 transition-opacity">
+    <div class="w-full max-w-lg bg-[#0e1017] border border-[#1e2230] rounded-2xl shadow-2xl p-6 relative overflow-hidden font-sans">
+      <button onclick="closeAddItemModal()" class="absolute top-5 right-5 text-zinc-500 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="flex items-center gap-3 mb-6 border-b border-[#1e2230] pb-4">
+        <div class="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl">
+          <i data-lucide="package-plus" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-white text-base">Add New Item</h3>
+          <p class="text-xs text-zinc-400 mt-0.5">Input new item parameters into the weaponry catalog.</p>
+        </div>
+      </div>
+
+      <div class="space-y-3.5 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Nama Barang</label>
+            <input type="text" id="new-item-name" placeholder="Example: Tactical AK-47" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Kategori</label>
+            <select id="new-item-cat" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-emerald-500">
+              <option value="weapon">Weapon</option>
+              <option value="ammo">Ammo</option>
+              <option value="vest">Vest</option>
+              <option value="durgs">Drugs</option>
+              <option value="attachments">Attachment</option>
+              <option value="tool-heist">Tool Heist</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Selling price ($)</label>
+            <input type="number" id="new-item-price" placeholder="150000" class="w-full bg-[#131622] border border-[#1e2230] text-amber-400 px-3 py-2 rounded-xl font-semibold focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Base Price ($)</label>
+            <input type="number" id="new-item-base" placeholder="140000" class="w-full bg-[#131622] border border-[#1e2230] text-zinc-300 px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Opening Stock</label>
+            <input type="number" id="new-item-stock" value="10" min="0" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-semibold focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+       <!-- TAMBAHAN BARU: Pilihan Status Ready atau Coming Soon -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Availability Status</label>
+            <select id="new-item-status" class="w-full bg-[#131622] border border-[#1e2230] text-emerald-400 px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-emerald-500">
+              <option value="ready">Ready (Available on the market)</option>
+              <option value="coming_soon">Coming Soon (Coming Soon / Locked)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Status Batasan (Associates)</label>
+            <select id="new-item-restricted" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-emerald-500">
+              <option value="true">Restricted (Associates Dilarang Beli)</option>
+              <option value="false">Open (Available for All Ranks)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Upload Image (PC/Mobile)</label>
+            <input type="file" id="new-item-file" accept="image/*" onchange="handleNewItemImageUpload(event)" class="w-full bg-[#131622] border border-[#1e2230] text-zinc-300 px-2.5 py-1.5 rounded-xl text-xs">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Or External Image URL</label>
+            <input type="text" id="new-item-img-url" placeholder="https://images.unsplash.com/..." class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-zinc-400 font-semibold mb-1">Brief Description</label>
+          <input type="text" id="new-item-desc" placeholder="Details regarding specifications or product highlights..." class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500">
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-[#1e2230] flex justify-end gap-3 font-semibold text-xs uppercase">
+        <button onclick="closeAddItemModal()" class="px-5 py-2.5 bg-[#131622] hover:bg-[#1e2230] text-zinc-300 hover:text-white rounded-xl transition">
+          Cancel
+        </button>
+        <button onclick="submitNewItem()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i> Save & Add
+        </button>
+      </div>
+    </div>
+  </div>
+
+<!-- EDIT ITEM MODAL -->
+  <div id="edit-item-modal" class="fixed inset-0 z-[240] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 transition-opacity">
+    <div class="w-full max-w-lg bg-[#0e1017] border border-[#1e2230] rounded-2xl shadow-2xl p-6 relative overflow-hidden font-sans">
+      <button onclick="closeEditItemModal()" class="absolute top-5 right-5 text-zinc-500 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="flex items-center gap-3 mb-6 border-b border-[#1e2230] pb-4">
+        <div class="p-2.5 bg-blue-500/10 text-blue-400 rounded-xl">
+          <i data-lucide="edit-3" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-white text-base">Edit Detail Barang</h3>
+          <p class="text-xs text-zinc-400 mt-0.5">Perbarui harga jual, stok, foto, atau ubah status menjadi Coming Soon</p>
+        </div>
+      </div>
+
+      <div class="space-y-3.5 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Nama Barang</label>
+            <input type="text" id="edit-item-name" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Kategori</label>
+            <select id="edit-item-cat" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-blue-500">
+              <option value="weapon">WEAPON (Senjata)</option>
+              <option value="ammo">AMMO (Amunisi)</option>
+              <option value="vest">VEST (Pelindung)</option>
+              <option value="attachments">ATTACHMENTS</option>
+              <option value="durgs">DRUGS / PACKAGE</option>
+              <option value="tool-heist">TOOL HEIST</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Harga Jual ($)</label>
+            <input type="number" id="edit-item-price" class="w-full bg-[#131622] border border-[#1e2230] text-amber-400 px-3 py-2 rounded-xl font-semibold focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Base Price ($)</label>
+            <input type="number" id="edit-item-base" class="w-full bg-[#131622] border border-[#1e2230] text-zinc-300 px-3 py-2 rounded-xl focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Stok Saat Ini</label>
+            <input type="number" id="edit-item-stock" min="0" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-semibold focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Status Ketersediaan</label>
+            <select id="edit-item-status" class="w-full bg-[#131622] border border-[#1e2230] text-blue-400 px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-blue-500">
+              <option value="ready">Ready (Tersedia)</option>
+              <option value="coming_soon">Coming Soon (Locked)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Status Batasan</label>
+            <select id="edit-item-restricted" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl font-medium focus:outline-none focus:border-blue-500">
+              <option value="true">Restricted (Associates Dilarang)</option>
+              <option value="false">Terbuka Untuk Semua</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Ganti Foto (PC/HP)</label>
+            <input type="file" id="edit-item-file" accept="image/*" onchange="handleEditItemImageUpload(event)" class="w-full bg-[#131622] border border-[#1e2230] text-zinc-300 px-2.5 py-1.5 rounded-xl text-xs">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Atau URL Foto Eksternal</label>
+            <input type="text" id="edit-item-img-url" placeholder="Kosongkan jika foto tidak diganti..." class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-zinc-400 font-semibold mb-1">Deskripsi Singkat</label>
+          <input type="text" id="edit-item-desc" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3 py-2 rounded-xl focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-[#1e2230] flex justify-end gap-3 font-semibold text-xs uppercase">
+        <button onclick="closeEditItemModal()" class="px-5 py-2.5 bg-[#131622] hover:bg-[#1e2230] text-zinc-300 hover:text-white rounded-xl transition">
+          Cancel
+        </button>
+        <button onclick="submitEditItem()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i> Simpan Perubahan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING CART BUTTON -->
+  
+  <button onclick="openCartDrawer()" id="floating-cart-btn" style="display: none;" class="fixed bottom-6 right-6 z-[150] bg-red-600 hover:bg-red-500 text-white p-3.5 sm:px-5 sm:py-3.5 rounded-2xl shadow-xl shadow-red-600/20 flex items-center gap-3 transition-all transform hover:scale-105 group">
+      <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+      <span id="floating-cart-badge" class="absolute -top-2 -right-2 bg-emerald-500 text-slate-950 font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center shadow">0</span>
+    </div>
+    <div class="hidden sm:block text-left border-l border-white/20 pl-3">
+      <span class="text-[10px] text-red-100 block uppercase font-medium">Total Order</span>
+      <span id="floating-cart-total" class="font-bold text-sm leading-none">$0</span>
+    </div>
+  </button>
+
+  <!-- SLIDE-OVER CART DRAWER -->
+  <div id="cart-drawer-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[160] hidden transition-opacity" onclick="closeCartDrawer()"></div>
+  <div id="cart-drawer" class="fixed inset-y-0 right-0 z-[170] w-full max-w-md bg-[#0e1017] border-l border-[#1e2230] shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300">
+    
+    <div class="p-5 border-b border-[#1e2230] flex items-center justify-between bg-[#0e1017]">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500">
+          <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-white text-base">Syndicate Armory Cart</h3>
+          <p class="text-[11px] text-zinc-400">Review pesanan persenjataan sebelum proses</p>
+        </div>
+      </div>
+      <button onclick="closeCartDrawer()" class="text-zinc-500 hover:text-white p-1 rounded-lg hover:bg-white/5 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div id="drawer-cart-items" class="flex-1 overflow-y-auto p-5 space-y-3 scrollbar-thin"></div>
+
+    <div class="p-5 border-t border-[#1e2230] bg-[#0e1017] space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-zinc-400 mb-1.5">Syndicate Voucher / Promo</label>
+        <div class="flex gap-2">
+          <input type="text" id="promo-code-input" placeholder="KODE VOUCHER" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3.5 py-2 rounded-xl text-xs uppercase focus:outline-none focus:border-red-500">
+          <button onclick="applyPromoCode()" class="bg-[#131622] border border-[#1e2230] hover:border-zinc-500 text-zinc-300 hover:text-white px-4 py-2 rounded-xl font-semibold text-xs uppercase shrink-0 transition">Apply</button>
+        </div>
+      </div>
+
+      <div class="space-y-2 text-xs border-t border-[#1e2230] pt-3">
+        <div class="flex justify-between text-zinc-400">
+          <span>Subtotal:</span>
+          <span id="drawer-subtotal" class="text-white font-medium">$0</span>
+        </div>
+        <div class="flex justify-between items-center pt-1 border-t border-[#1e2230]">
+          <span class="font-bold uppercase text-sm text-zinc-300">Total Pembayaran:</span>
+          <span id="drawer-cart-total" class="text-xl font-bold text-emerald-400">$0</span>
+        </div>
+        <div class="flex justify-between items-center text-[11px] text-zinc-500">
+          <span>Metode Pembayaran:</span>
+          <span class="text-red-500 font-semibold uppercase">MAZE BANK WIRE</span>
+        </div>
+      </div>
+
+      <button onclick="checkoutCart()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-3.5 rounded-xl uppercase tracking-wider transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
+        <i data-lucide="check-circle" class="w-4 h-4"></i> Konfirmasi & Pesan Sekarang
+      </button>
+    </div>
+    
+
+  </div>
+
+  <script src="script.js"></script>
+
+<!-- KUSTOM INPUT MODAL (PENGGANTI PROMPT BAWAAN BROWSER) -->
+<div id="custom-prompt-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] hidden flex items-center justify-center p-4 transition-opacity">
+  <div id="custom-prompt-box" class="w-full max-w-sm bg-[#0e1017] border border-[#1e2230] rounded-2xl shadow-2xl p-6 text-center relative overflow-hidden font-sans">
+    <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4 text-amber-400">
+      <i data-lucide="help-circle" class="w-6 h-6"></i>
+    </div>
+    <h3 id="custom-prompt-title" class="text-base font-bold text-white uppercase tracking-wider mb-2">INPUT DATA</h3>
+    <p id="custom-prompt-message" class="text-xs text-zinc-400 leading-relaxed mb-4">Masukkan nilai yang diperlukan:</p>
+    
+    <input type="text" id="custom-prompt-input" class="w-full bg-[#131622] border border-[#1e2230] text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold focus:outline-none focus:border-amber-500 mb-6 text-center" />
+
+    <div class="grid grid-cols-2 gap-3 font-semibold text-xs uppercase">
+   <button onclick="document.getElementById('custom-prompt-backdrop').classList.add('hidden')" class="w-full py-2.5 bg-[#131622] hover:bg-[#1e2230] text-zinc-300 hover:text-white rounded-xl transition border border-[#1e2230]">
+  Cancel
+</button>
+   <button id="custom-prompt-btn-yes" onclick="submitCustomPrompt()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-black rounded-xl shadow-lg shadow-amber-500/20 transition">
+  Simpan
+</button>
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
