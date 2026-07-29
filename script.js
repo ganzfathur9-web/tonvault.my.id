@@ -241,21 +241,57 @@ function initCloudRealtimeSync() {
 }
 
 function applyGlobalState(data) {
-  if (!data) return;
-  adminTransactions = data.adminTransactions || [];
-  orgLeaderboard = data.orgLeaderboard || [];
-  if (data.vaultInventory && data.vaultInventory.length > 0) vaultInventory = data.vaultInventory;
-  vaultBalance = data.vaultBalance || 0;
-  if (data.syndVouchers && data.syndVouchers.length > 0) syndVouchers = data.syndVouchers;
-  metalScrapLogs = data.metalScrapLogs || [];
-  customAccounts = data.customAccounts ? { ...defaultCustomAccounts, ...data.customAccounts } : defaultCustomAccounts;
-  stockProofLogs = data.stockProofLogs || [];
-  isVaultLockdown = data.isVaultLockdown || false;
-  blacklistedUsers = data.blacklistedUsers || [];
-  savedProfiles = data.savedProfiles || {};
-// 💥 TAMBAHKAN 1 BARIS INI DI SINI:
-  checkAndApplyRankChanges();
-  
+    if (!data) return;
+    adminTransactions = data.adminTransactions || [];
+    orgLeaderboard = data.orgLeaderboard || [];
+    if (data.vaultInventory && data.vaultInventory.length > 0) vaultInventory = data.vaultInventory;
+    vaultBalance = data.vaultBalance || 0;
+    if (data.syndVouchers && data.syndVouchers.length > 0) syndVouchers = data.syndVouchers;
+    metalScrapLogs = data.metalScrapLogs || [];
+    
+    if (typeof defaultCustomAccounts !== 'undefined') {
+        customAccounts = data.customAccounts ? { ...defaultCustomAccounts, ...data.customAccounts } : defaultCustomAccounts;
+    } else {
+        customAccounts = data.customAccounts || {};
+    }
+    
+    stockProofLogs = data.stockProofLogs || [];
+    isVaultLockdown = data.isVaultLockdown || false;
+    blacklistedUsers = data.blacklistedUsers || [];
+    
+    // ========================================================================
+    // 🔥 SISTEM ANTI-BUG ANGKA & AUTO-SINKRONISASI (MEMAKSA MUNCUL DI ROSTER)
+    // ========================================================================
+    let rawProfiles = data.savedProfiles || {};
+    savedProfiles = {}; // Bersihkan memori dan bangun ulang dengan benar
+    
+    // 1. Ekstrak data mentah Firebase (Bypass bug jika Firebase mengubahnya jadi Array)
+    Object.keys(rawProfiles).forEach(key => {
+        const p = rawProfiles[key];
+        if (p && typeof p === 'object' && p.name) {
+            const safeKey = p.name.toLowerCase();
+            savedProfiles[safeKey] = p;
+        }
+    });
+
+    // 2. SINKRONISASI PAKSA: Semua Akun di 'Account Manage' WAJIB MUNCUL di Roster
+    if (customAccounts) {
+        Object.keys(customAccounts).forEach(acc => {
+            const safeAcc = acc.toLowerCase();
+            // Jika akun ada di Login tapi hilang di Roster, buatkan KTP-nya secara otomatis!
+            if (safeAcc && !savedProfiles[safeAcc]) {
+                savedProfiles[safeAcc] = {
+                    name: acc.toUpperCase(),
+                    job: customAccounts[acc].rank || 'Soldiers',
+                    groupType: 'Family',
+                    phone: '0812-XXXX',
+                    idcard: 'TON-' + Math.floor(1000 + Math.random()*9000)
+                };
+            }
+        });
+    }
+
+    if (typeof checkAndApplyRankChanges === 'function') checkAndApplyRankChanges();
 }
 
 function refreshAllUIDisplays() {
