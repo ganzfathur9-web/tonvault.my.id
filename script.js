@@ -1563,24 +1563,29 @@ function renderCartPageUI() {
 
 function checkoutCart() {
   try {
-    if (isVaultLockdown && !isDonTier(getUserRank())) {
-      showToast("VAULT LOCKDOWN", "Brangkas sedang DIKUNCI oleh Moderator! Transaksi ditangguhkan.", "error");
+    // 1. Cek Lockdown
+    if (typeof isVaultLockdown !== 'undefined' && isVaultLockdown) {
+      const rank = typeof getUserRank === 'function' ? getUserRank() : 'Soldiers';
+      if (typeof isDonTier === 'function' && !isDonTier(rank)) {
+        if (typeof showToast === 'function') showToast("VAULT LOCKDOWN", "Brangkas sedang DIKUNCI oleh Moderator! Transaksi ditangguhkan.", "error");
+        return;
+      }
+    }
+
+    // 2. Cek Keranjang Kosong
+    if (!userCart || !Array.isArray(userCart) || userCart.length === 0) {
+      if (typeof showToast === 'function') showToast("WARNING", "Keranjang kosong! Silakan pilih barang terlebih dahulu.", "error");
       return;
     }
 
-    if (userCart.length === 0) {
-      showToast("WARNING", "Keranjang kosong! Silakan pilih barang terlebih dahulu.", "error");
-      return;
-    }
-
+    // 3. Setup Order ID & Subtotal
     const orderId = "ORD-" + Math.random().toString(36).substring(2, 10).toUpperCase();
     let subtotal = 0;
-    userCart.forEach(i => subtotal += (i.unitPrice * i.qty));
+    userCart.forEach(i => subtotal += ((Number(i.unitPrice) || 0) * (Number(i.qty) || 1)));
 
     let discountNominal = 0;
     let finalSpent = subtotal;
 
-    // Kalkulasi Diskon (Aman dari error undefined)
     if (typeof appliedDiscount !== 'undefined' && appliedDiscount > 0) {
       if (appliedDiscount < 1) { 
         discountNominal = subtotal * appliedDiscount;
@@ -1591,44 +1596,51 @@ function checkoutCart() {
       }
     }
 
-    // Pemotongan Stok
+    // 4. Paksa format Array & Potong Stok
+    if (!Array.isArray(vaultInventory)) vaultInventory = [];
     userCart.forEach(cartItem => {
       const invItem = vaultInventory.find(i => i.name === cartItem.name);
       if (invItem) {
-        invItem.stock = Math.max(0, invItem.stock - cartItem.qty);
+        invItem.stock = Math.max(0, Number(invItem.stock) - Number(cartItem.qty));
         if (invItem.stock === 0) invItem.badge = 'OUT OF STOCK';
         else if (invItem.stock <= 5) invItem.badge = 'LOW';
       }
     });
 
+    const activeUser = (typeof currentLoggedInUser !== 'undefined' && currentLoggedInUser) ? currentLoggedInUser : "BUYER";
+    const userRank = (typeof getUserRank === 'function') ? String(getUserRank()).toUpperCase() : "SOLDIERS";
+    const promoStr = (typeof appliedPromoName !== 'undefined' && appliedPromoName) ? appliedPromoName : '';
+
     const newTx = {
-      id: orderId, buyer: currentLoggedInUser || "BUYER", role: getUserRank().toUpperCase(),
-      package: "No", qty: userCart.reduce((s, i) => s + i.qty, 0), total: finalSpent,
-      subtotal: subtotal, promoName: (typeof appliedPromoName !== 'undefined' ? appliedPromoName : ''), discountAmount: discountNominal,
+      id: orderId, buyer: activeUser, role: userRank,
+      package: "No", qty: userCart.reduce((s, i) => s + (Number(i.qty) || 1), 0), total: finalSpent,
+      subtotal: subtotal, promoName: promoStr, discountAmount: discountNominal,
       processed: "Pending", time: new Date().toLocaleString('en-US', { hour12: true }),
       waiting: "Just now", priority: finalSpent > 50000 ? "HIGH" : "MEDIUM", status: "Pending",
-      items: [...userCart]
+      items: JSON.parse(JSON.stringify(userCart)) 
     };
 
-    if (!adminTransactions) adminTransactions = [];
+    // 5. PAKSA FORMAT ARRAY UNTUK DATABASE
+    if (!Array.isArray(adminTransactions)) adminTransactions = [];
     adminTransactions.unshift(newTx);
 
-    let existingSpender = orgLeaderboard.find(s => s.name === (currentLoggedInUser || "BUYER"));
-    if (existingSpender) existingSpender.spent += finalSpent;
-    else orgLeaderboard.push({ name: currentLoggedInUser || "BUYER", role: getUserRank().toUpperCase(), spent: finalSpent, top: false });
+    if (!Array.isArray(orgLeaderboard)) orgLeaderboard = [];
+    let existingSpender = orgLeaderboard.find(s => s.name === activeUser);
+    if (existingSpender) existingSpender.spent = (Number(existingSpender.spent) || 0) + finalSpent;
+    else orgLeaderboard.push({ name: activeUser, role: userRank, spent: finalSpent, top: false });
 
-    // Simpan ke Firebase secara Real-Time
-    saveAppData(); 
+    // 6. Simpan ke Firebase
+    if (typeof saveAppData === 'function') saveAppData(); 
 
-    // Kirim Laporan ke Discord
-    if (typeof sendDiscordWebhook === 'function') {
-        sendDiscordWebhook(ORDERS_WEBHOOK_URL, "PESANAN BARU MASUK", `Pesanan dari **${currentLoggedInUser}**`, [
+    // 7. Tembak Discord Webhook
+    if (typeof sendDiscordWebhook === 'function' && typeof ORDERS_WEBHOOK_URL !== 'undefined') {
+        sendDiscordWebhook(ORDERS_WEBHOOK_URL, "PESANAN BARU MASUK", `Pesanan dari **${activeUser}**`, [
           { name: "Order ID", value: orderId, inline: true }, { name: "Total Payable", value: "$" + finalSpent.toLocaleString(), inline: true }
         ], 15844367);
     }
 
-    // Bersihkan Keranjang & Update Tampilan
-    userCart = [];
+    // 8. Bersihkan & Refresh UI
+    userCart.length = 0; 
     if (typeof appliedDiscount !== 'undefined') appliedDiscount = 0;
     if (typeof appliedPromoName !== 'undefined') appliedPromoName = '';
 
@@ -1639,17 +1651,17 @@ function checkoutCart() {
     if (typeof renderReleaseOutstanding === 'function') renderReleaseOutstanding();
     if (typeof renderVaultHistory === 'function') renderVaultHistory();
     if (typeof renderLeaderboard === 'function') renderLeaderboard();
-
     if (typeof closeCartDrawer === 'function') closeCartDrawer();
-    showToast("ORDER PLACED", `Pesanan ID ${orderId} berhasil dikirim!`, "success");
-    
+
+    if (typeof showToast === 'function') showToast("ORDER PLACED", `Pesanan ID ${orderId} berhasil dikirim!`, "success");
     if (typeof switchTab === 'function') switchTab('my-orders');
 
   } catch (err) {
-    console.error("Checkout Error:", err);
-    showToast("SYSTEM ERROR", "Terjadi kesalahan sistem. Transaksi gagal diproses.", "error");
+    // MENAMPILKAN SUMBER MASALAH ASLI DI CONSOLE
+    console.error("🔥 BACA ERROR INI DI CONSOLE:", err);
+    if (typeof showToast === 'function') showToast("SYSTEM ERROR", "Terjadi kesalahan sistem. Tekan F12 (Console) untuk melihat detailnya.", "error");
   }
-} 
+}
 
 // ==========================================
 // 🔥 TRANSAKSI & ADMIN RENDERER
