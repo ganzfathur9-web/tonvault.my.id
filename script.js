@@ -2449,38 +2449,32 @@ function renderTonCatalog() {
 }
 
 function adminUpdateCatalogUser(targetUsername, rankInputId, groupSelectId) {
-  // Ambil nilai terbaru dari kotak pilihan (dropdown)
-  const newRank = document.getElementById(rankInputId)?.value || 'Soldiers';
-  const newGroup = document.getElementById(groupSelectId)?.value || 'Internal';
-  
-  if (!targetUsername) return;
+    if (!targetUsername) return;
 
-  // 1. CARI NAMA ASLI DI DATABASE (Anti-error Huruf Besar/Kecil)
-  let profileKey = Object.keys(savedProfiles).find(k => k.toLowerCase() === targetUsername.toLowerCase());
-  if (!profileKey) profileKey = targetUsername.toLowerCase(); // Buat baru jika tidak ketemu
+    const newRank = document.getElementById(rankInputId)?.value || 'Soldiers';
+    const newGroup = document.getElementById(groupSelectId)?.value || 'Family';
+    const lowerTarget = targetUsername.toLowerCase();
 
-  if (!savedProfiles[profileKey]) {
-      savedProfiles[profileKey] = { name: targetUsername.toUpperCase(), job: 'Soldiers', groupType: 'Family' };
-  }
-  
-  // 2. Ubah Pangkat di Daftar Roster
-  savedProfiles[profileKey].job = newRank; 
-  savedProfiles[profileKey].groupType = newGroup;
+    if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
+    if (typeof customAccounts === 'undefined') window.customAccounts = {};
 
-  // 3. Ubah Pangkat di Sistem Login (Agar tidak bentrok saat dia login)
-  const lowerTarget = targetUsername.toLowerCase();
-  if (customAccounts[lowerTarget]) {
-      customAccounts[lowerTarget].rank = newRank;
-  }
-  
-  // 4. Simpan & Tembak ke Firebase
-  if (typeof saveAppData === 'function') saveAppData(); 
-  
-  // 5. Refresh Layar Sendiri
-  if (typeof renderTonCatalog === 'function') renderTonCatalog();
-  if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
-  
-  if (typeof showToast === 'function') showToast("ROSTER UPDATED", `Data ${targetUsername} berhasil diperbarui jadi ${newRank}!`, "success");
+    // 1. Update data di Roster
+    if (savedProfiles[lowerTarget]) {
+        savedProfiles[lowerTarget].job = newRank;
+        savedProfiles[lowerTarget].groupType = newGroup;
+    }
+
+    // 2. Update data di Sistem Login (Agar rank tidak turun saat dia login)
+    if (customAccounts[lowerTarget]) {
+        customAccounts[lowerTarget].rank = newRank;
+    }
+
+    // 3. Tembak ke Firebase & Refresh Layar
+    if (typeof saveAppData === 'function') saveAppData();
+    if (typeof renderTonCatalog === 'function') renderTonCatalog();
+    if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+
+    if (typeof showToast === 'function') showToast("ROSTER UPDATED", `Data ${targetUsername} berhasil diperbarui jadi ${newRank}!`, "success");
 }
 
 function adminDeleteUser(targetUsername) {
@@ -2842,53 +2836,37 @@ function renderCustomAccountsTable() {
 }
 
 function addCustomAccount() {
-    // 1. Cek rank kebal huruf besar/kecil
-    const currentRank = (typeof getUserRank === 'function' ? getUserRank() : currentUserRole || '').toLowerCase();
-    if (currentRank !== 'moderator' && currentRank !== 'admin') {
-        if(typeof showToast === 'function') showToast("AKSES DITOLAK", "Hanya Moderator yang bisa membuat akun.", "error");
-        return;
-    }
-
     const user = document.getElementById('new-bisnis-user')?.value.trim();
     const pass = document.getElementById('new-bisnis-pass')?.value.trim();
     const rank = document.getElementById('new-bisnis-rank')?.value || 'Bisnis';
-    
-    if (!user || !pass) {
-        if(typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
-        return;
-    }
+
+    if (!user || !pass) return;
 
     const lowerUser = user.toLowerCase();
     if (typeof customAccounts === 'undefined') window.customAccounts = {};
     if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
 
-    // 2. Simpan ke Login System
+    // 1. Simpan Password
     customAccounts[lowerUser] = { pass: pass, rank: rank };
-    
-    // 3. Bersihkan data ganda di Roster (jika ada)
-    const existingKey = Object.keys(savedProfiles).find(k => k.toLowerCase() === lowerUser);
-    if (existingKey && existingKey !== user) {
-        delete savedProfiles[existingKey];
-    }
 
-    // 4. Masukkan langsung ke Roster TON!
-    savedProfiles[user] = { 
-        name: user.toUpperCase(), 
-        phone: '0812-XXXX', 
-        idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), 
-        job: rank, 
-        avatar: '', 
-        groupType: 'Family' 
+    // 2. Buat Profil Roster (Pakai huruf kecil agar kebal error)
+    savedProfiles[lowerUser] = {
+        name: user.toUpperCase(),
+        phone: '0812-XXXX',
+        idcard: 'TON-' + Math.floor(1000 + Math.random() * 9000),
+        job: rank,
+        avatar: '',
+        groupType: 'Family'
     };
-    
-    // 5. Tembak ke Firebase dan Segarkan Layar
-    if (typeof saveAppData === 'function') saveAppData(); 
+
+    // 3. Tembak ke Database & Refresh Layar
+    if (typeof saveAppData === 'function') saveAppData();
     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
-    if (typeof renderTonCatalog === 'function') renderTonCatalog(); 
+    if (typeof renderTonCatalog === 'function') renderTonCatalog();
 
-    if (typeof showToast === 'function') showToast("AKUN DISIMPAN", `Akun "${user}" berhasil dibuat & masuk Roster!`, "success");
+    if (typeof showToast === 'function') showToast("AKUN DISIMPAN", `Akun ${user} berhasil dibuat & masuk Roster!`, "success");
 
-    // Kosongkan kotak ketikan
+    // Bersihkan kotak ketikan
     if (document.getElementById('new-bisnis-user')) document.getElementById('new-bisnis-user').value = '';
     if (document.getElementById('new-bisnis-pass')) document.getElementById('new-bisnis-pass').value = '';
 }
