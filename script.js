@@ -2458,22 +2458,27 @@ function adminUpdateCatalogUser(targetUsername, rankInputId, groupSelectId) {
     if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
     if (typeof customAccounts === 'undefined') window.customAccounts = {};
 
-    // 1. Update data di Roster
     if (savedProfiles[lowerTarget]) {
         savedProfiles[lowerTarget].job = newRank;
         savedProfiles[lowerTarget].groupType = newGroup;
     }
-
-    // 2. Update data di Sistem Login (Agar rank tidak turun saat dia login)
     if (customAccounts[lowerTarget]) {
         customAccounts[lowerTarget].rank = newRank;
     }
 
-    // 3. Tembak ke Firebase & Refresh Layar
     if (typeof saveAppData === 'function') saveAppData();
+
+    // 🔥 DIRECT INJECTION FIREBASE (MEMAKSA SERVER MENERIMA ROSTER) 🔥
+    try {
+        let dbRef = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
+        if (dbRef) {
+            dbRef.ref('savedProfiles').set(savedProfiles);
+            dbRef.ref('customAccounts').set(customAccounts);
+        }
+    } catch(e) { console.log("Firebase Bypass Error:", e); }
+
     if (typeof renderTonCatalog === 'function') renderTonCatalog();
     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
-
     if (typeof showToast === 'function') showToast("ROSTER UPDATED", `Data ${targetUsername} berhasil diperbarui jadi ${newRank}!`, "success");
 }
 
@@ -2846,10 +2851,7 @@ function addCustomAccount() {
     if (typeof customAccounts === 'undefined') window.customAccounts = {};
     if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
 
-    // 1. Simpan Password
     customAccounts[lowerUser] = { pass: pass, rank: rank };
-
-    // 2. Buat Profil Roster (Pakai huruf kecil agar kebal error)
     savedProfiles[lowerUser] = {
         name: user.toUpperCase(),
         phone: '0812-XXXX',
@@ -2859,14 +2861,21 @@ function addCustomAccount() {
         groupType: 'Family'
     };
 
-    // 3. Tembak ke Database & Refresh Layar
     if (typeof saveAppData === 'function') saveAppData();
+    
+    // 🔥 DIRECT INJECTION FIREBASE (MEMAKSA SERVER MENERIMA AKUN BARU) 🔥
+    try {
+        let dbRef = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
+        if (dbRef) {
+            dbRef.ref('savedProfiles').set(savedProfiles);
+            dbRef.ref('customAccounts').set(customAccounts);
+        }
+    } catch(e) { console.log("Firebase Bypass Error:", e); }
+
     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
     if (typeof renderTonCatalog === 'function') renderTonCatalog();
-
     if (typeof showToast === 'function') showToast("AKUN DISIMPAN", `Akun ${user} berhasil dibuat & masuk Roster!`, "success");
 
-    // Bersihkan kotak ketikan
     if (document.getElementById('new-bisnis-user')) document.getElementById('new-bisnis-user').value = '';
     if (document.getElementById('new-bisnis-pass')) document.getElementById('new-bisnis-pass').value = '';
 }
