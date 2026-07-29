@@ -700,7 +700,6 @@ function handleAuthLogin(e) {
     
     if (typeof saveAppData === 'function') saveAppData(); 
     if (typeof initSession === 'function') initSession(finalRank, user, true);
-    return;
   }
 
   // Jika gagal login (salah password)
