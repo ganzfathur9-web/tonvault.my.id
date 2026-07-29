@@ -253,6 +253,9 @@ function applyGlobalState(data) {
   isVaultLockdown = data.isVaultLockdown || false;
   blacklistedUsers = data.blacklistedUsers || [];
   savedProfiles = data.savedProfiles || {};
+// 💥 TAMBAHKAN 1 BARIS INI DI SINI:
+  checkAndApplyRankChanges();
+  
 }
 
 function refreshAllUIDisplays() {
@@ -2820,43 +2823,34 @@ function renderCustomAccountsTable() {
 }
 
 function addCustomAccount() {
-  if (getUserRank() !== 'Moderator') {
-    showToast("ACCESS DENIED", "Hanya rank Moderator yang berhak mengelola akun login custom!", "error");
-    return;
+  const user = document.getElementById('new-bisnis-user')?.value.trim();
+  const pass = document.getElementById('new-bisnis-pass')?.value.trim();
+  const rank = document.getElementById('new-bisnis-rank')?.value || 'Bisnis';
+  
+  if (!user || !pass) return;
 
-    // 💥 TAMBAHKAN 1 BARIS INI AGAR AKUN BARU LANGSUNG DIKIRIM KE FIREBASE:
-    if (typeof saveAppData === 'function') saveAppData();
-}
-  
-  const userElem = document.getElementById('new-bisnis-user');
-  const passElem = document.getElementById('new-bisnis-pass');
-  const rankElem = document.getElementById('new-bisnis-rank');
-  
-  const user = userElem?.value.trim().toLowerCase();
-  const pass = passElem?.value.trim();
-  const rank = rankElem?.value || 'Bisnis';
-  
-  if (!user || !pass) {
-    showToast("WARNING", "Username dan Password tidak boleh kosong!", "error");
-    return;
-  }
-  
-  customAccounts[user] = { pass: pass, rank: rank };
-  localStorage.setItem('ton_custom_accounts', JSON.stringify(customAccounts));
-  
-  if (userElem) userElem.value = '';
-  if (passElem) passElem.value = '';
-  
-  renderCustomAccountsTable();
-  showToast("AKUN DISIMPAN", `Akun login "${user}" dengan rank [${rank}] berhasil disimpan!`, "success");
-}
+  const lowerUser = user.toLowerCase();
+  if (typeof customAccounts === 'undefined') window.customAccounts = {};
+  if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
 
-function deleteCustomAccount(username) {
-  if (getUserRank() !== 'Moderator') {
-    showToast("ACCESS DENIED", "Hanya rank Moderator yang berhak mengelola akun login custom!", "error");
-    return;
-
-    if (typeof saveAppData === 'function') saveAppData();
+  // 1. Simpan Password
+  customAccounts[lowerUser] = { pass: pass, rank: rank };
+  
+  // 2. Buat Profil KTP (Wajib ada agar device lain bisa login!)
+  savedProfiles[user] = { 
+      name: user.toUpperCase(), 
+      phone: '0812-XXXX', 
+      idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), 
+      job: rank, 
+      avatar: '', 
+      groupType: 'Family' 
+  };
+  
+  // 3. Tembak ke Firebase
+  if (typeof saveAppData === 'function') saveAppData(); 
+  
+  if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+  if (typeof showToast === 'function') showToast("AKUN DISIMPAN", `Akun "${user}" berhasil dibuat & disinkron ke Cloud!`, "success");
 }
   
   showCustomConfirm("DELETE LOGIN ACCOUNT", `Permanently delete login account "${username}"?`, () => {
@@ -3359,4 +3353,45 @@ function renderReleaseOutstanding() {
     `;
   }); 
   if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+
+// ============================================================================
+// 🪄 FITUR AUTO-UPDATE RANK TANPA RELOGIN
+// ============================================================================
+function checkAndApplyRankChanges() {
+    if (!currentLoggedInUser) return; // Jika belum login, abaikan
+
+    let latestRank = currentUserRole;
+    const lowerUser = currentLoggedInUser.toLowerCase();
+
+    // Ambil data pangkat paling baru dari Firebase
+    if (typeof savedProfiles !== 'undefined' && savedProfiles[currentLoggedInUser] && savedProfiles[currentLoggedInUser].job) {
+        latestRank = savedProfiles[currentLoggedInUser].job;
+    } else if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser]) {
+        latestRank = customAccounts[lowerUser].rank;
+    }
+
+    // Jika pangkat di database BEDA dengan pangkat di layar saat ini
+    if (latestRank !== currentUserRole) {
+        currentUserRole = latestRank; // Update variabel sistem
+        
+        // Simpan sesi baru ke memori lokal browser
+        localStorage.setItem('ton_current_session', JSON.stringify({ role: currentUserRole, name: currentLoggedInUser }));
+
+        // Ubah tulisan pangkat di pojok kiri bawah UI
+        const roleElem = document.getElementById('user-role-text');
+        if (roleElem) roleElem.innerText = currentUserRole.toUpperCase();
+
+        // Update hak akses tombol (Sembunyikan/Tampilkan menu Admin)
+        if (typeof updateRBACUI === 'function') updateRBACUI();
+
+        // Jika pangkat diturunkan dan tidak boleh lihat menu admin, lempar ke Shop
+        if (typeof canViewAdminPanel === 'function' && !canViewAdminPanel(currentUserRole)) {
+            if (typeof switchTab === 'function') switchTab('weapon-shop');
+        }
+
+        // Tampilkan notifikasi
+        if (typeof showToast === 'function') showToast("RANK UPDATED", `Sistem mendeteksi perubahan: Pangkat Anda kini menjadi ${currentUserRole.toUpperCase()}`, "success");
+    }
 }
