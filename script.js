@@ -2858,8 +2858,9 @@ function addCustomAccount() {
     localStorage.setItem('ton_custom_accounts', JSON.stringify(customAccounts));
     renderCustomAccountsTable();
     showToast("AKUN DIHAPUS", `Akun login "${username}" telah dihapus.`, "error");
-  });
-}
+  }
+                   );
+
 
 // ============================================================================
 // 🚨 FITUR 1: VAULT LOCKDOWN MODE (PANIC BUTTON)
