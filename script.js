@@ -635,7 +635,6 @@ function handleAuthLogin(e) {
     
     saveAppData(); 
     if (typeof initSession === 'function') initSession(finalRank, user, true);
-    return;
   }
   
   // 2. CEK LOGIN DEFAULT / BAWAAN SISTEM
