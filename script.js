@@ -2443,27 +2443,38 @@ function renderTonCatalog() {
 }
 
 function adminUpdateCatalogUser(targetUsername, rankInputId, groupSelectId) {
+  // Ambil nilai terbaru dari kotak pilihan (dropdown)
   const newRank = document.getElementById(rankInputId)?.value || 'Soldiers';
   const newGroup = document.getElementById(groupSelectId)?.value || 'Internal';
   
-  if (!savedProfiles[targetUsername]) {
-      savedProfiles[targetUsername] = { name: targetUsername, job: 'Soldiers', groupType: 'Family' };
+  if (!targetUsername) return;
+
+  // 1. CARI NAMA ASLI DI DATABASE (Anti-error Huruf Besar/Kecil)
+  let profileKey = Object.keys(savedProfiles).find(k => k.toLowerCase() === targetUsername.toLowerCase());
+  if (!profileKey) profileKey = targetUsername.toLowerCase(); // Buat baru jika tidak ketemu
+
+  if (!savedProfiles[profileKey]) {
+      savedProfiles[profileKey] = { name: targetUsername.toUpperCase(), job: 'Soldiers', groupType: 'Family' };
   }
   
-  // Update di data profil utama Roster
-  savedProfiles[targetUsername].job = newRank; 
-  savedProfiles[targetUsername].groupType = newGroup;
+  // 2. Ubah Pangkat di Daftar Roster
+  savedProfiles[profileKey].job = newRank; 
+  savedProfiles[profileKey].groupType = newGroup;
 
-  // ANTI-BUG LOGIN: Sinkronkan juga rank-nya ke data Akun Custom agar Login tidak bentrok!
+  // 3. Ubah Pangkat di Sistem Login (Agar tidak bentrok saat dia login)
   const lowerTarget = targetUsername.toLowerCase();
   if (customAccounts[lowerTarget]) {
       customAccounts[lowerTarget].rank = newRank;
   }
   
-  saveAppData(); // Tembak langsung ke Firebase
-  renderTonCatalog();
+  // 4. Simpan & Tembak ke Firebase
+  if (typeof saveAppData === 'function') saveAppData(); 
+  
+  // 5. Refresh Layar Sendiri
+  if (typeof renderTonCatalog === 'function') renderTonCatalog();
   if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
-  if (typeof showToast === 'function') showToast("ROSTER UPDATED", `Data ${targetUsername} berhasil diperbarui menjadi ${newRank}!`, "success");
+  
+  if (typeof showToast === 'function') showToast("ROSTER UPDATED", `Data ${targetUsername} berhasil diperbarui jadi ${newRank}!`, "success");
 }
 
 function adminDeleteUser(targetUsername) {
@@ -2829,16 +2840,18 @@ function addCustomAccount() {
   
   if (!user || !pass) return;
 
+  // Seragamkan jadi huruf kecil sebagai kunci rahasia database
   const lowerUser = user.toLowerCase();
+
   if (typeof customAccounts === 'undefined') window.customAccounts = {};
   if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
 
-  // 1. Simpan Password
+  // 1. Simpan ke data Login (Akun Custom)
   customAccounts[lowerUser] = { pass: pass, rank: rank };
   
-  // 2. Buat Profil KTP (Wajib ada agar device lain bisa login!)
-  savedProfiles[user] = { 
-      name: user.toUpperCase(), 
+  // 2. Simpan ke data Roster (Wajib gunakan lowerUser agar sinkron!)
+  savedProfiles[lowerUser] = { 
+      name: user.toUpperCase(), // Nama tampilan tetap keren (Huruf Besar)
       phone: '0812-XXXX', 
       idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), 
       job: rank, 
@@ -2846,11 +2859,16 @@ function addCustomAccount() {
       groupType: 'Family' 
   };
   
-  // 3. Tembak ke Firebase
+  // 3. Simpan dan Segarkan Layar Seketika
   if (typeof saveAppData === 'function') saveAppData(); 
-  
   if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
-  if (typeof showToast === 'function') showToast("AKUN DISIMPAN", `Akun "${user}" berhasil dibuat & disinkron ke Cloud!`, "success");
+  if (typeof renderTonCatalog === 'function') renderTonCatalog(); // 💥 MEMANGGIL TABEL ROSTER AGAR MUNCUL
+
+  if (typeof showToast === 'function') showToast("AKUN DISIMPAN", `Akun "${user}" berhasil dibuat & ditambahkan ke Roster!`, "success");
+
+  // Kosongkan kolom input setelah selesai
+  if (document.getElementById('new-bisnis-user')) document.getElementById('new-bisnis-user').value = '';
+  if (document.getElementById('new-bisnis-pass')) document.getElementById('new-bisnis-pass').value = '';
 }
   
   showCustomConfirm("DELETE LOGIN ACCOUNT", `Permanently delete login account "${username}"?`, () => {
