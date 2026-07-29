@@ -1562,57 +1562,94 @@ function renderCartPageUI() {
 }
 
 function checkoutCart() {
-  if (isVaultLockdown && !isDonTier(getUserRank())) {
-    showToast("VAULT LOCKDOWN", "Brangkas sedang DIKUNCI oleh Moderator! Seluruh transaksi dinonaktifkan sementara.", "error");
-    return;
-  }
-  if (blacklistedUsers.includes((currentLoggedInUser || '').toLowerCase())) {
-    showToast("ACCOUNT FROZEN", "Akun Anda dibekukan (Blacklist)! Anda tidak diizinkan melakukan transaksi.", "error");
-    return;
-  }
-
-  if (userCart.length === 0) { showToast("WARNING", "Keranjang kosong!", "error"); return; }
-  const orderId = "ORD-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-  let subtotal = userCart.reduce((sum, i) => sum + (i.unitPrice * i.qty), 0);
-  let finalSpent = appliedDiscount > 0 ? (appliedDiscount < 1 ? subtotal - (subtotal * appliedDiscount) : Math.max(0, subtotal - appliedDiscount)) : subtotal;
-  let discountNominal = subtotal - finalSpent;
-
-  userCart.forEach(cartItem => {
-    const invItem = vaultInventory.find(i => i.name === cartItem.name);
-    if (invItem) {
-      invItem.stock = Math.max(0, invItem.stock - cartItem.qty);
-      if (invItem.stock === 0) invItem.badge = 'OUT OF STOCK';
-      else if (invItem.stock <= 5) invItem.badge = 'LOW';
+  try {
+    if (isVaultLockdown && !isDonTier(getUserRank())) {
+      showToast("VAULT LOCKDOWN", "Brangkas sedang DIKUNCI oleh Moderator! Transaksi ditangguhkan.", "error");
+      return;
     }
-  });
 
-  const newTx = { 
-    id: orderId, buyer: currentLoggedInUser || "BUYER", role: getUserRank().toUpperCase(), 
-    package: "No", qty: userCart.reduce((s, i) => s + i.qty, 0), total: finalSpent, 
-    subtotal: subtotal, promoName: appliedPromoName || '', discountAmount: discountNominal,
-    processed: "Pending", time: new Date().toISOString().slice(0, 16).replace('T', ' '), 
-    waiting: "Just now", priority: finalSpent > 50000 ? "HIGH" : "MEDIUM", status: "Pending",  
-    items: [...userCart] 
-  };
-  adminTransactions.unshift(newTx);
+    if (userCart.length === 0) {
+      showToast("WARNING", "Keranjang kosong! Silakan pilih barang terlebih dahulu.", "error");
+      return;
+    }
 
-  let existingSpender = orgLeaderboard.find(s => s.name === (currentLoggedInUser || "BUYER"));
-  if (existingSpender) existingSpender.spent += finalSpent;
-  else orgLeaderboard.push({ name: currentLoggedInUser || "BUYER", role: getUserRank().toUpperCase(), spent: finalSpent, top: false });
+    const orderId = "ORD-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+    let subtotal = 0;
+    userCart.forEach(i => subtotal += (i.unitPrice * i.qty));
 
-  saveAppData();
-  sendDiscordWebhook(ORDERS_WEBHOOK_URL, "PESANAN BARU MASUK", `Pesanan dari **${currentLoggedInUser}**`, [
-    { name: "Order ID", value: orderId, inline: true }, { name: "Total Payable", value: "$" + finalSpent.toLocaleString(), inline: true },
-    { name: "Voucher Used", value: appliedPromoName ? `${appliedPromoName} (-$${discountNominal.toLocaleString()})` : "None", inline: false }
-  ], 15844367);
+    let discountNominal = 0;
+    let finalSpent = subtotal;
 
-  userCart = []; appliedDiscount = 0; appliedPromoName = ''; renderCartPageUI(); updateDashboardData();
-  renderTxProcessTable(true); renderReleaseOutstanding(); renderVaultHistory(); renderLeaderboard();
-  renderVaultInventory(); renderMarketplace(currentMarketplaceFilter);
-  
-  closeCartDrawer();
-  showToast("ORDER PLACED", `Pesanan ID ${orderId} berhasil dikirim!`, "success"); switchTab('my-orders');
-}
+    // Kalkulasi Diskon (Aman dari error undefined)
+    if (typeof appliedDiscount !== 'undefined' && appliedDiscount > 0) {
+      if (appliedDiscount < 1) { 
+        discountNominal = subtotal * appliedDiscount;
+        finalSpent = subtotal - discountNominal;
+      } else { 
+        discountNominal = appliedDiscount;
+        finalSpent = Math.max(0, subtotal - appliedDiscount);
+      }
+    }
+
+    // Pemotongan Stok
+    userCart.forEach(cartItem => {
+      const invItem = vaultInventory.find(i => i.name === cartItem.name);
+      if (invItem) {
+        invItem.stock = Math.max(0, invItem.stock - cartItem.qty);
+        if (invItem.stock === 0) invItem.badge = 'OUT OF STOCK';
+        else if (invItem.stock <= 5) invItem.badge = 'LOW';
+      }
+    });
+
+    const newTx = {
+      id: orderId, buyer: currentLoggedInUser || "BUYER", role: getUserRank().toUpperCase(),
+      package: "No", qty: userCart.reduce((s, i) => s + i.qty, 0), total: finalSpent,
+      subtotal: subtotal, promoName: (typeof appliedPromoName !== 'undefined' ? appliedPromoName : ''), discountAmount: discountNominal,
+      processed: "Pending", time: new Date().toLocaleString('en-US', { hour12: true }),
+      waiting: "Just now", priority: finalSpent > 50000 ? "HIGH" : "MEDIUM", status: "Pending",
+      items: [...userCart]
+    };
+
+    if (!adminTransactions) adminTransactions = [];
+    adminTransactions.unshift(newTx);
+
+    let existingSpender = orgLeaderboard.find(s => s.name === (currentLoggedInUser || "BUYER"));
+    if (existingSpender) existingSpender.spent += finalSpent;
+    else orgLeaderboard.push({ name: currentLoggedInUser || "BUYER", role: getUserRank().toUpperCase(), spent: finalSpent, top: false });
+
+    // Simpan ke Firebase secara Real-Time
+    saveAppData(); 
+
+    // Kirim Laporan ke Discord
+    if (typeof sendDiscordWebhook === 'function') {
+        sendDiscordWebhook(ORDERS_WEBHOOK_URL, "PESANAN BARU MASUK", `Pesanan dari **${currentLoggedInUser}**`, [
+          { name: "Order ID", value: orderId, inline: true }, { name: "Total Payable", value: "$" + finalSpent.toLocaleString(), inline: true }
+        ], 15844367);
+    }
+
+    // Bersihkan Keranjang & Update Tampilan
+    userCart = [];
+    if (typeof appliedDiscount !== 'undefined') appliedDiscount = 0;
+    if (typeof appliedPromoName !== 'undefined') appliedPromoName = '';
+
+    if (typeof renderCartPageUI === 'function') renderCartPageUI();
+    if (typeof updateDashboardData === 'function') updateDashboardData();
+    if (typeof renderTxProcessTable === 'function') renderTxProcessTable(true);
+    if (typeof renderVaultInventory === 'function') renderVaultInventory();
+    if (typeof renderReleaseOutstanding === 'function') renderReleaseOutstanding();
+    if (typeof renderVaultHistory === 'function') renderVaultHistory();
+    if (typeof renderLeaderboard === 'function') renderLeaderboard();
+
+    if (typeof closeCartDrawer === 'function') closeCartDrawer();
+    showToast("ORDER PLACED", `Pesanan ID ${orderId} berhasil dikirim!`, "success");
+    
+    if (typeof switchTab === 'function') switchTab('my-orders');
+
+  } catch (err) {
+    console.error("Checkout Error:", err);
+    showToast("SYSTEM ERROR", "Terjadi kesalahan sistem. Transaksi gagal diproses.", "error");
+  }
+} 
 
 // ==========================================
 // 🔥 TRANSAKSI & ADMIN RENDERER
