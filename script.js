@@ -183,12 +183,6 @@ function getSafeStorage(key) {
 }
 
 function saveAppData() {
-  // PROTEKSI MUTLAK: Jangan izinkan web menimpa database awan jika data awan belum selesai di-download!
-  if (db && !isFirebaseSynced) {
-    console.warn("⚠️ Mencegah Overwrite! Menunggu sinkronisasi Firebase selesai...");
-    return;
-  }
-
   const allData = {
     adminTransactions: typeof adminTransactions !== 'undefined' ? adminTransactions : [],
     orgLeaderboard: typeof orgLeaderboard !== 'undefined' ? orgLeaderboard : [],
@@ -203,15 +197,13 @@ function saveAppData() {
     savedProfiles: typeof savedProfiles !== 'undefined' ? savedProfiles : {}
   };
 
-  if (db) {
-    db.ref('ton_global_state').set(allData).catch(err => console.warn("Firebase Error:", err));
+  if (typeof db !== 'undefined' && db) {
+    db.ref('ton_global_state').set(allData).catch(err => console.warn(err));
   }
 
   try {
     localStorage.setItem('ton_global_state', JSON.stringify(allData));
-  } catch (e) {
-    console.warn("Local storage error.");
-  }
+  } catch (e) {}
 }
 
   // 2. Simpan cadangan ke Memori Lokal (Fallback)
@@ -562,13 +554,7 @@ async function verifyUserDiscordAccount(tokenType, accessToken) {
 }
 
 function handleAuthLogin(e) {
-  e.preventDefault();
-
-  // PROTEKSI LOGIN: Tunggu sampai Firebase selesai memuat data Akun!
-  if (db && !isFirebaseSynced) {
-    if (typeof showToast === 'function') showToast("LOADING", "Menyinkronkan data server, mohon tunggu 2 detik lalu klik login lagi...", "error");
-    return;
-  }
+  if (e) e.preventDefault();
 
   const user = document.getElementById('auth-username')?.value.trim();
   const pass = document.getElementById('auth-passcode')?.value.trim();
@@ -579,11 +565,60 @@ function handleAuthLogin(e) {
       return;
   }
 
-  if (typeof blacklistedUsers !== 'undefined' && blacklistedUsers.includes(lowerUser)) {
+  // Pastikan variabel siap agar tidak error
+  if (typeof blacklistedUsers === 'undefined') window.blacklistedUsers = [];
+  if (typeof customAccounts === 'undefined') window.customAccounts = {};
+  if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
+
+  if (blacklistedUsers.includes(lowerUser)) {
     if (typeof showToast === 'function') showToast("ACCOUNT FROZEN", "Akun Anda dibekukan (Blacklist)!", "error");
     if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
     return;
   }
+
+  let finalRank = '';
+  let isValidLogin = false;
+
+  // 1. CEK AKUN CUSTOM
+  if (customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
+    finalRank = customAccounts[lowerUser].rank;
+    isValidLogin = true;
+  } 
+  // 2. CEK LOGIN DEFAULT
+  else if (pass === 'admin123' || pass === 'xxx123') {
+    finalRank = 'Soldiers';
+    if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
+    else if (lowerUser === 'moderator') finalRank = 'Moderator';
+    else if (lowerUser === 'don') finalRank = 'Don';
+    else if (lowerUser === 'underboss') finalRank = 'Underboss';
+    else if (lowerUser === 'bisnis') finalRank = 'Bisnis';
+    else if (lowerUser === 'associates') finalRank = 'Associates';
+    isValidLogin = true;
+  }
+
+  if (isValidLogin) {
+    // Sinkronkan selalu dengan Roster terbaru agar rank tidak keriset
+    if (savedProfiles[user] && savedProfiles[user].job) {
+        finalRank = savedProfiles[user].job;
+    } else {
+        savedProfiles[user] = { 
+            name: user.toUpperCase(), 
+            phone: '0812-XXXX', 
+            idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), 
+            job: finalRank, 
+            avatar: '', 
+            groupType: 'Family' 
+        };
+    }
+    
+    if (typeof saveAppData === 'function') saveAppData(); 
+    if (typeof initSession === 'function') initSession(finalRank, user, true);
+    return;
+  }
+
+  // Jika gagal login (salah password)
+  if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
+}
 
   // 1. CEK AKUN CUSTOM DARI ACCOUNT MANAGE
   if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
