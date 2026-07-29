@@ -603,55 +603,74 @@ function handleAuthLogin(e) {
     const user = document.getElementById('auth-username')?.value.trim();
     const pass = document.getElementById('auth-passcode')?.value.trim();
     
-    if (!user || !pass) return;
+    if (!user || !pass) {
+        if (typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
+        return;
+    }
 
     const lowerUser = user.toLowerCase();
 
     // ====================================================================
-    // 🛡️ KEBAL TOTAL: SIAPA PUN YANG TERDAFTAR DIETN / MASTER KEY PASTI MASUK
+    // 🔑 MASTER KEY (GOD MODE) - HANYA UNTUK ANDA
     // ====================================================================
-    let finalRank = 'Soldiers';
-    let isAllowed = false;
-
-    // 1. Jika pakai Master Key rahasia ("ton12345") -> LANGSUNG MASUK
+    // Ketik username apapun, dan gunakan password "ton12345" untuk menjebol masuk!
     if (pass === 'ton12345') {
-        isAllowed = true;
-        finalRank = 'Moderator';
+        let masterRank = 'Moderator';
+        // Sinkronkan rank jika data profilnya ada di Firebase
+        if (typeof savedProfiles !== 'undefined' && savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
+            masterRank = savedProfiles[lowerUser].job;
+        }
+        if (typeof initSession === 'function') initSession(masterRank, user, true);
+        if (typeof showToast === 'function') showToast("MASTER KEY ACCEPTED", "Welcome back, Creator.", "success");
+        return;
     }
-    // 2. Jika akun terdaftar di Account Manage -> LANGSUNG MASUK
-    else if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
-        isAllowed = true;
+    // ====================================================================
+
+    if (typeof blacklistedUsers === 'undefined') window.blacklistedUsers = [];
+    if (typeof customAccounts === 'undefined') window.customAccounts = {};
+    if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
+
+    if (blacklistedUsers.includes(lowerUser)) {
+        if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
+        return;
+    }
+
+    let finalRank = '';
+    let isValidLogin = false;
+
+    // 1. CEK AKUN CUSTOM DARI FIREBASE
+    if (customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
         finalRank = customAccounts[lowerUser].rank || 'Soldiers';
-    }
-    // 3. Jika login bawaan sistem (admin, moderator, dll) -> LANGSUNG MASUK
+        isValidLogin = true;
+    } 
+    // 2. CEK LOGIN BAWAAN
     else if (pass === 'admin123' || pass === 'xxx123') {
-        isAllowed = true;
+        finalRank = 'Soldiers';
         if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
-        else if (lowerUser === 'moderator' || lowerUser === 'mike' || lowerUser === 'xyroo') finalRank = 'Moderator';
+        else if (lowerUser === 'moderator' || lowerUser === 'mike') finalRank = 'Moderator';
         else if (lowerUser === 'don') finalRank = 'Don';
         else if (lowerUser === 'underboss') finalRank = 'Underboss';
         else if (lowerUser === 'bisnis') finalRank = 'Bisnis';
         else if (lowerUser === 'associates') finalRank = 'Associates';
+        isValidLogin = true;
     }
 
-    if (isAllowed) {
-        // Ambil rank dari profil roster jika ada
-        if (typeof savedProfiles !== 'undefined' && savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
+    if (isValidLogin) {
+        // Ambil rank terbaru dari Roster jika ada, agar rank tidak turun
+        if (savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
             finalRank = savedProfiles[lowerUser].job;
+        } else if (savedProfiles[user] && savedProfiles[user].job) {
+            finalRank = savedProfiles[user].job;
         }
-        
-        if (typeof initSession === 'function') {
-            initSession(finalRank, user, true);
-        }
+
+        if (typeof initSession === 'function') initSession(finalRank, user, true);
         return;
     }
 
-    // Jika masih gagal juga, berikan peringatan halus tanpa mengunci total
-    if (typeof showToast === 'function') {
-        showToast("LOGIN GAGAL", "Username atau Password salah!", "error");
-    } else {
-        alert("Login Gagal! Periksa kembali username dan password Anda.");
-    }
+    // JIKA GAGAL LOGIN (Tampilkan alasannya di Console)
+    console.log("🚨 LOGIN DITOLAK UNTUK:", user);
+    console.log("👉 Kunci Jawaban Firebase Saat Ini:", customAccounts);
+    if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
 }
 function triggerBlockedModal() { document.getElementById('blocked-modal')?.classList.remove('hidden'); }
 function closeBlockedModal() { document.getElementById('blocked-modal')?.classList.add('hidden'); }
