@@ -2834,50 +2834,95 @@ function renderCustomAccountsTable() {
 }
 
 function addCustomAccount() {
-  const user = document.getElementById('new-bisnis-user')?.value.trim();
-  const pass = document.getElementById('new-bisnis-pass')?.value.trim();
-  const rank = document.getElementById('new-bisnis-rank')?.value || 'Bisnis';
-  
-  if (!user || !pass) return;
+    // 1. Cek rank kebal huruf besar/kecil
+    const currentRank = (typeof getUserRank === 'function' ? getUserRank() : currentUserRole || '').toLowerCase();
+    if (currentRank !== 'moderator' && currentRank !== 'admin') {
+        if(typeof showToast === 'function') showToast("AKSES DITOLAK", "Hanya Moderator yang bisa membuat akun.", "error");
+        return;
+    }
 
-  // Seragamkan jadi huruf kecil sebagai kunci rahasia database
-  const lowerUser = user.toLowerCase();
+    const user = document.getElementById('new-bisnis-user')?.value.trim();
+    const pass = document.getElementById('new-bisnis-pass')?.value.trim();
+    const rank = document.getElementById('new-bisnis-rank')?.value || 'Bisnis';
+    
+    if (!user || !pass) {
+        if(typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
+        return;
+    }
 
-  if (typeof customAccounts === 'undefined') window.customAccounts = {};
-  if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
+    const lowerUser = user.toLowerCase();
+    if (typeof customAccounts === 'undefined') window.customAccounts = {};
+    if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
 
-  // 1. Simpan ke data Login (Akun Custom)
-  customAccounts[lowerUser] = { pass: pass, rank: rank };
-  
-  // 2. Simpan ke data Roster (Wajib gunakan lowerUser agar sinkron!)
-  savedProfiles[lowerUser] = { 
-      name: user.toUpperCase(), // Nama tampilan tetap keren (Huruf Besar)
-      phone: '0812-XXXX', 
-      idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), 
-      job: rank, 
-      avatar: '', 
-      groupType: 'Family' 
-  };
-  
-  // 3. Simpan dan Segarkan Layar Seketika
-  if (typeof saveAppData === 'function') saveAppData(); 
-  if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
-  if (typeof renderTonCatalog === 'function') renderTonCatalog(); // 💥 MEMANGGIL TABEL ROSTER AGAR MUNCUL
+    // 2. Simpan ke Login System
+    customAccounts[lowerUser] = { pass: pass, rank: rank };
+    
+    // 3. Bersihkan data ganda di Roster (jika ada)
+    const existingKey = Object.keys(savedProfiles).find(k => k.toLowerCase() === lowerUser);
+    if (existingKey && existingKey !== user) {
+        delete savedProfiles[existingKey];
+    }
 
-  if (typeof showToast === 'function') showToast("AKUN DISIMPAN", `Akun "${user}" berhasil dibuat & ditambahkan ke Roster!`, "success");
+    // 4. Masukkan langsung ke Roster TON!
+    savedProfiles[user] = { 
+        name: user.toUpperCase(), 
+        phone: '0812-XXXX', 
+        idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), 
+        job: rank, 
+        avatar: '', 
+        groupType: 'Family' 
+    };
+    
+    // 5. Tembak ke Firebase dan Segarkan Layar
+    if (typeof saveAppData === 'function') saveAppData(); 
+    if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+    if (typeof renderTonCatalog === 'function') renderTonCatalog(); 
 
-  // Kosongkan kolom input setelah selesai
-  if (document.getElementById('new-bisnis-user')) document.getElementById('new-bisnis-user').value = '';
-  if (document.getElementById('new-bisnis-pass')) document.getElementById('new-bisnis-pass').value = '';
+    if (typeof showToast === 'function') showToast("AKUN DISIMPAN", `Akun "${user}" berhasil dibuat & masuk Roster!`, "success");
+
+    // Kosongkan kotak ketikan
+    if (document.getElementById('new-bisnis-user')) document.getElementById('new-bisnis-user').value = '';
+    if (document.getElementById('new-bisnis-pass')) document.getElementById('new-bisnis-pass').value = '';
 }
   
-  showCustomConfirm("DELETE LOGIN ACCOUNT", `Permanently delete login account "${username}"?`, () => {
-    delete customAccounts[username];
-    localStorage.setItem('ton_custom_accounts', JSON.stringify(customAccounts));
-    renderCustomAccountsTable();
-    showToast("AKUN DIHAPUS", `Akun login "${username}" telah dihapus.`, "error");
-  }
-                   );
+function deleteCustomAccount(username) {
+    // 1. Cek rank kebal huruf besar/kecil
+    const currentRank = (typeof getUserRank === 'function' ? getUserRank() : currentUserRole || '').toLowerCase();
+    if (currentRank !== 'moderator' && currentRank !== 'admin') {
+        if(typeof showToast === 'function') showToast("AKSES DITOLAK", "Hanya Moderator yang bisa menghapus akun.", "error");
+        return;
+    }
+
+    // 2. Konfirmasi & Eksekusi Hapus
+    if (typeof showCustomConfirm === 'function') {
+        showCustomConfirm("Hapus Akun", `Yakin hapus akun "${username}"?`, () => executeDelete(username));
+    } else if (confirm(`Yakin hapus akun "${username}"?`)) {
+        executeDelete(username);
+    }
+
+    function executeDelete(targetUser) {
+        const lowerTarget = targetUser.toLowerCase();
+        
+        // Hapus dari data Login
+        if (typeof customAccounts !== 'undefined' && customAccounts[lowerTarget]) {
+            delete customAccounts[lowerTarget];
+        }
+        
+        // Hapus dari Roster (Sapu bersih semua huruf besar/kecilnya)
+        if (typeof savedProfiles !== 'undefined') {
+            const realKey = Object.keys(savedProfiles).find(k => k.toLowerCase() === lowerTarget);
+            if (realKey) delete savedProfiles[realKey];
+            if (savedProfiles[targetUser]) delete savedProfiles[targetUser];
+        }
+
+        // Tembak ke Firebase dan Refresh
+        if (typeof saveAppData === 'function') saveAppData();
+        if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+        if (typeof renderTonCatalog === 'function') renderTonCatalog();
+        
+        if (typeof showToast === 'function') showToast("AKUN DIHAPUS", `Akun "${targetUser}" berhasil dihapus bersih!`, "success");
+    }
+}
 
 
 // ============================================================================
