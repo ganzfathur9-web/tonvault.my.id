@@ -596,14 +596,16 @@ function handleAuthLogin(e) {
 
   const user = document.getElementById('auth-username')?.value.trim();
   const pass = document.getElementById('auth-passcode')?.value.trim();
-  const lowerUser = user ? user.toLowerCase() : '';
-
+  
   if (!user || !pass) {
       if (typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
       return;
   }
 
-  // Pastikan variabel siap agar tidak error
+  // Deklarasi HANYA SATU KALI di sini
+  const lowerUser = user.toLowerCase();
+
+  // Pastikan variabel siap
   if (typeof blacklistedUsers === 'undefined') window.blacklistedUsers = [];
   if (typeof customAccounts === 'undefined') window.customAccounts = {};
   if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
@@ -613,6 +615,52 @@ function handleAuthLogin(e) {
     if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
     return;
   }
+
+  let finalRank = '';
+  let isValidLogin = false;
+
+  // 1. CEK AKUN CUSTOM
+  if (customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
+    finalRank = customAccounts[lowerUser].rank;
+    isValidLogin = true;
+  } 
+  // 2. CEK LOGIN DEFAULT
+  else if (pass === 'admin123' || pass === 'xxx123') {
+    finalRank = 'Soldiers';
+    if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
+    else if (lowerUser === 'moderator') finalRank = 'Moderator';
+    else if (lowerUser === 'don') finalRank = 'Don';
+    else if (lowerUser === 'underboss') finalRank = 'Underboss';
+    else if (lowerUser === 'bisnis') finalRank = 'Bisnis';
+    else if (lowerUser === 'associates') finalRank = 'Associates';
+    isValidLogin = true;
+  }
+
+  if (isValidLogin) {
+    // Sinkronkan selalu dengan Roster terbaru agar rank tidak keriset
+    if (savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
+        finalRank = savedProfiles[lowerUser].job;
+    } else if (savedProfiles[user] && savedProfiles[user].job) {
+        finalRank = savedProfiles[user].job;
+    } else {
+        savedProfiles[lowerUser] = { 
+            name: user.toUpperCase(), 
+            phone: '0812-XXXX', 
+            idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), 
+            job: finalRank, 
+            avatar: '', 
+            groupType: 'Family' 
+        };
+    }
+    
+    if (typeof saveAppData === 'function') saveAppData(); 
+    if (typeof initSession === 'function') initSession(finalRank, user, true);
+    return;
+  }
+
+  // Jika gagal login
+  if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
+}
 
   let finalRank = '';
   let isValidLogin = false;
