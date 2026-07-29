@@ -2823,7 +2823,10 @@ function addCustomAccount() {
   if (getUserRank() !== 'Moderator') {
     showToast("ACCESS DENIED", "Hanya rank Moderator yang berhak mengelola akun login custom!", "error");
     return;
-  }
+
+    // 💥 TAMBAHKAN 1 BARIS INI AGAR AKUN BARU LANGSUNG DIKIRIM KE FIREBASE:
+    if (typeof saveAppData === 'function') saveAppData();
+}
   
   const userElem = document.getElementById('new-bisnis-user');
   const passElem = document.getElementById('new-bisnis-pass');
