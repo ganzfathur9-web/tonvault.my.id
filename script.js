@@ -2458,7 +2458,6 @@ function adminUpdateCatalogUser(targetUsername, rankInputId, groupSelectId) {
     if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
     if (typeof customAccounts === 'undefined') window.customAccounts = {};
 
-    // 1. Update Lokal
     if (savedProfiles[lowerTarget]) {
         savedProfiles[lowerTarget].job = newRank;
         savedProfiles[lowerTarget].groupType = newGroup;
@@ -2467,17 +2466,17 @@ function adminUpdateCatalogUser(targetUsername, rankInputId, groupSelectId) {
         customAccounts[lowerTarget].rank = newRank;
     }
 
-    // 🔥 KITA HAPUS saveAppData() DAN GUNAKAN UPDATE SPESIFIK FIREBASE 🔥
+    if (typeof saveAppData === 'function') saveAppData();
+
+    // 🔥 DIRECT INJECTION FIREBASE (MEMAKSA SERVER MENERIMA ROSTER) 🔥
     try {
         let dbRef = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
         if (dbRef) {
-            // Tembak hanya ke akun tersebut, jangan libatkan data lain
-            dbRef.ref('savedProfiles/' + lowerTarget).set(savedProfiles[lowerTarget]);
-            dbRef.ref('customAccounts/' + lowerTarget).set(customAccounts[lowerTarget]);
+            dbRef.ref('savedProfiles').set(savedProfiles);
+            dbRef.ref('customAccounts').set(customAccounts);
         }
-    } catch(e) { console.log("Firebase Error:", e); }
+    } catch(e) { console.log("Firebase Bypass Error:", e); }
 
-    // 3. Refresh UI
     if (typeof renderTonCatalog === 'function') renderTonCatalog();
     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
     if (typeof showToast === 'function') showToast("ROSTER UPDATED", `Data ${targetUsername} berhasil diperbarui jadi ${newRank}!`, "success");
@@ -2862,15 +2861,16 @@ function addCustomAccount() {
         groupType: 'Family'
     };
 
-    // 🔥 KITA HAPUS saveAppData() DAN GUNAKAN UPDATE SPESIFIK FIREBASE 🔥
+    if (typeof saveAppData === 'function') saveAppData();
+    
+    // 🔥 DIRECT INJECTION FIREBASE (MEMAKSA SERVER MENERIMA AKUN BARU) 🔥
     try {
         let dbRef = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
         if (dbRef) {
-            // Tembak hanya ke akun yang baru dibuat
-            dbRef.ref('savedProfiles/' + lowerUser).set(savedProfiles[lowerUser]);
-            dbRef.ref('customAccounts/' + lowerUser).set(customAccounts[lowerUser]);
+            dbRef.ref('savedProfiles').set(savedProfiles);
+            dbRef.ref('customAccounts').set(customAccounts);
         }
-    } catch(e) { console.log("Firebase Error:", e); }
+    } catch(e) { console.log("Firebase Bypass Error:", e); }
 
     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
     if (typeof renderTonCatalog === 'function') renderTonCatalog();
