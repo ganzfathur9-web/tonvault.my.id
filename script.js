@@ -259,13 +259,9 @@ function applyGlobalState(data) {
     isVaultLockdown = data.isVaultLockdown || false;
     blacklistedUsers = data.blacklistedUsers || [];
     
-    // ========================================================================
-    // 🔥 SISTEM ANTI-BUG ANGKA & AUTO-SINKRONISASI (MEMAKSA MUNCUL DI ROSTER)
-    // ========================================================================
     let rawProfiles = data.savedProfiles || {};
-    savedProfiles = {}; // Bersihkan memori dan bangun ulang dengan benar
+    savedProfiles = {}; 
     
-    // 1. Ekstrak data mentah Firebase (Bypass bug jika Firebase mengubahnya jadi Array)
     Object.keys(rawProfiles).forEach(key => {
         const p = rawProfiles[key];
         if (p && typeof p === 'object' && p.name) {
@@ -274,11 +270,9 @@ function applyGlobalState(data) {
         }
     });
 
-    // 2. SINKRONISASI PAKSA: Semua Akun di 'Account Manage' WAJIB MUNCUL di Roster
     if (customAccounts) {
         Object.keys(customAccounts).forEach(acc => {
             const safeAcc = acc.toLowerCase();
-            // Jika akun ada di Login tapi hilang di Roster, buatkan KTP-nya secara otomatis!
             if (safeAcc && !savedProfiles[safeAcc]) {
                 savedProfiles[safeAcc] = {
                     name: acc.toUpperCase(),
@@ -292,6 +286,18 @@ function applyGlobalState(data) {
     }
 
     if (typeof checkAndApplyRankChanges === 'function') checkAndApplyRankChanges();
+
+    // ========================================================================
+    // 🔥 PERBAIKAN KRUSIAL: PAKSA RE-RENDER SEMUA UI SAAT DATA BERUBAH 🔥
+    // ========================================================================
+    if (typeof refreshAllUIDisplays === 'function') {
+        refreshAllUIDisplays();
+    } else {
+        // Jika fungsi refreshAllUIDisplays tidak ada, render satu per satu secara eksplisit
+        if (typeof renderTonCatalog === 'function') renderTonCatalog();
+        if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+        // Tambahkan render lain yang diperlukan (misal: render balance, dsb.)
+    }
 }
 
 function refreshAllUIDisplays() {
