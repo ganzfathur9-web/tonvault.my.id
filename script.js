@@ -216,7 +216,6 @@ function saveAppData() {
   } catch (e) {
     console.warn("Memori lokal browser penuh atau terblokir.");
   }
-}
 
 // ============================================================================
 // ☁️ ENGINE SINKRONISASI FIREBASE REAL-TIME (ANTI-OVERWRITE)
@@ -664,7 +663,7 @@ function handleAuthLogin(e) {
   }
 
   if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
-}
+
 
 
 function triggerBlockedModal() { document.getElementById('blocked-modal')?.classList.remove('hidden'); }
