@@ -9,18 +9,17 @@ const firebaseConfig = {
   measurementId: "G-YRRRZQR0QH"
 };
 
-
-// Inisialisasi Firebase Cloud
 let db = null;
 try {
   if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
-    console.log("🟢 FIREBASE CLOUD CONNECTED: Sistem online & tersinkronisasi antar device.");
+    console.log("🟢 FIREBASE CLOUD CONNECTED: Sistem online & tersinkronisasi.");
   }
 } catch (e) {
-  console.warn("⚠️ FIREBASE ERROR: Menggunakan fallback penyimpanan lokal browser.");
+  console.warn("⚠️ FIREBASE ERROR: Menggunakan penyimpanan lokal.");
 }
+
 
 const LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1530339697950457896/tJ0pI8L0aA1_eGQalIYceUoQ1OLNgik_60Dbk22JB2w0DtsT2hdeL4Z5bmZcnfbHfL0c";
 const ORDERS_WEBHOOK_URL = "https://discord.com/api/webhooks/1530340024275701870/pjcRbUAF5Gfx6VCHLvwaQgap01G5Skwye7QHRkpEemSrtVNsXxvq9Rr8HN_3mGwvpRXU";
@@ -183,24 +182,81 @@ function getSafeStorage(key) {
 }
 
 function saveAppData() {
-  try {
-    localStorage.setItem('ton_admin_transactions', JSON.stringify(adminTransactions));
-    localStorage.setItem('ton_org_leaderboard', JSON.stringify(orgLeaderboard));
-    localStorage.setItem('ton_vault_inventory', JSON.stringify(vaultInventory));
-    localStorage.setItem('ton_vault_balance', JSON.stringify(vaultBalance));
-    localStorage.setItem('ton_vouchers', JSON.stringify(syndVouchers));
-    localStorage.setItem('ton_metal_scrap', JSON.stringify(metalScrapLogs));
-    localStorage.setItem('ton_custom_accounts', JSON.stringify(customAccounts));
-    localStorage.setItem('ton_stock_proof_logs', JSON.stringify(stockProofLogs));
-    localStorage.setItem('ton_vault_lockdown', JSON.stringify(isVaultLockdown));
-    localStorage.setItem('ton_blacklisted_users', JSON.stringify(blacklistedUsers));
-  } catch (e) {
-    if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
-      showToast("MEMORI PENUH", "Gagal menyimpan! Ukuran foto/gambar terlalu besar untuk memori browser.", "error");
-    } else {
-      showToast("SYSTEM ERROR", "Terjadi kesalahan saat menyimpan data ke browser.", "error");
-    }
+  const allData = {
+    adminTransactions: adminTransactions || [],
+    orgLeaderboard: orgLeaderboard || [],
+    vaultInventory: vaultInventory || [],
+    vaultBalance: vaultBalance || 0,
+    syndVouchers: syndVouchers || [],
+    metalScrapLogs: metalScrapLogs || [],
+    customAccounts: customAccounts || {},
+    stockProofLogs: stockProofLogs || [],
+    isVaultLockdown: isVaultLockdown || false,
+    blacklistedUsers: blacklistedUsers || [],
+    savedProfiles: savedProfiles || {}
+  };
+
+  // Kirim ke Firebase Cloud
+  if (db) {
+    db.ref('ton_global_state').set(allData).catch(err => console.warn("Firebase Error:", err));
   }
+
+  // Backup ke Local Storage
+  try {
+    localStorage.setItem('ton_global_state', JSON.stringify(allData));
+  } catch (e) {
+    console.warn("Local storage error.");
+  }
+}
+
+// ============================================================================
+// ☁️ ENGINE SINKRONISASI FIREBASE REAL-TIME
+// ============================================================================
+function initCloudRealtimeSync() {
+  if (!db) {
+    const backup = getSafeStorage('ton_global_state');
+    if (backup) applyGlobalState(backup);
+    return;
+  }
+  db.ref('ton_global_state').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      applyGlobalState(data);
+      refreshAllUIDisplays();
+    }
+  });
+}
+
+function applyGlobalState(data) {
+  if (!data) return;
+  adminTransactions = data.adminTransactions || [];
+  orgLeaderboard = data.orgLeaderboard || [];
+  if (data.vaultInventory && data.vaultInventory.length > 0) vaultInventory = data.vaultInventory;
+  vaultBalance = data.vaultBalance || 0;
+  if (data.syndVouchers && data.syndVouchers.length > 0) syndVouchers = data.syndVouchers;
+  metalScrapLogs = data.metalScrapLogs || [];
+  customAccounts = data.customAccounts ? { ...defaultCustomAccounts, ...data.customAccounts } : defaultCustomAccounts;
+  stockProofLogs = data.stockProofLogs || [];
+  isVaultLockdown = data.isVaultLockdown || false;
+  blacklistedUsers = data.blacklistedUsers || [];
+  savedProfiles = data.savedProfiles || {};
+}
+
+function refreshAllUIDisplays() {
+  if (typeof updateDashboardData === 'function') updateDashboardData();
+  if (typeof renderMarketplace === 'function') renderMarketplace(currentMarketplaceFilter);
+  if (typeof renderVaultInventory === 'function') renderVaultInventory();
+  if (typeof renderTxProcessTable === 'function') renderTxProcessTable(true);
+  if (typeof renderReleaseOutstanding === 'function') renderReleaseOutstanding();
+  if (typeof renderVaultHistory === 'function') renderVaultHistory();
+  if (typeof renderLeaderboard === 'function') renderLeaderboard();
+  if (typeof renderTonCatalog === 'function') renderTonCatalog();
+  if (typeof renderBlacklistTable === 'function') renderBlacklistTable();
+  if (typeof renderStaffKPITable === 'function') renderStaffKPITable();
+  if (typeof updateLockdownUI === 'function') updateLockdownUI();
+  if (typeof renderCartPageUI === 'function') renderCartPageUI();
+  if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+  if (typeof renderProfilePage === 'function') renderProfilePage();
 }
 
 // ==========================================
@@ -332,6 +388,9 @@ function updateRBACUI() {
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof lucide !== 'undefined') lucide.createIcons();
   checkDiscordOAuthResponse();
+
+  // TAMBAHKAN BARIS INI:
+  initCloudRealtimeSync();
 
   const discordLoginBtn = document.getElementById('discord-login-btn');
   if (discordLoginBtn) discordLoginBtn.addEventListener('click', handleDiscordLogin);
@@ -3185,6 +3244,6 @@ function renderReleaseOutstanding() {
         <td class="p-3.5 text-right">${actionBtn}</td>
       </tr>
     `;
-  });
+  }); 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
