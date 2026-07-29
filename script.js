@@ -551,34 +551,42 @@ function handleAuthLogin(e) {
   e.preventDefault();
   const user = document.getElementById('auth-username')?.value.trim();
   const pass = document.getElementById('auth-passcode')?.value.trim();
-  
   const lowerUser = user.toLowerCase();
 
+  if (!user || !pass) {
+      if(typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
+      return;
+  }
+
   if (blacklistedUsers.includes(lowerUser)) {
-    sendDiscordWebhook(LOGS_WEBHOOK_URL, "🚨 BLACKLISTED LOGIN ATTEMPT", `Akun ter-blacklist **${user}** mencoba login manual ke sistem brangkas!`, [], 15158332);
-    showToast("ACCOUNT FROZEN", "Akun Anda dibekukan (Blacklist)! Akses login ke sistem ditolak.", "error");
+    if(typeof showToast === 'function') showToast("ACCOUNT FROZEN", "Akun Anda dibekukan (Blacklist)!", "error");
     triggerBlockedModal();
     return;
   }
 
+  // 1. CEK AKUN CUSTOM DARI ACCOUNT MANAGE
   if (customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
-    const assignedRank = customAccounts[lowerUser].rank;
-    
-    const savedProfiles = getSafeStorage('ton_all_profiles') || {};
+    let finalRank = customAccounts[lowerUser].rank;
+
+    // ANTI-BUG ROSTER: Jika rank sudah pernah diubah di Roster, WAJIB gunakan rank terbaru dari profil!
+    if (savedProfiles[user] && savedProfiles[user].job) {
+        finalRank = savedProfiles[user].job;
+    }
+
     if (!savedProfiles[user]) {
-      savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: assignedRank, avatar: '', groupType: 'Family' };
-      localStorage.setItem('ton_all_profiles', JSON.stringify(savedProfiles));
+      savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: finalRank, avatar: '', groupType: 'Family' };
     } else {
-      savedProfiles[user].job = assignedRank;
-      localStorage.setItem('ton_all_profiles', JSON.stringify(savedProfiles));
+      savedProfiles[user].job = finalRank; // Simpan rank yang benar
     }
     
-    initSession(assignedRank, user, true);
+    saveAppData(); 
+    initSession(finalRank, user, true);
     return;
   }
   
+  // 2. CEK LOGIN DEFAULT / BAWAAN SISTEM
   if (pass === 'admin123' || pass === 'xxx123') {
-    let assignedRank = 'Soldiers';
+      let assignedRank = 'Soldiers';
     if (lowerUser === 'admin' || lowerUser === 'xxx') assignedRank = 'Admin';
     else if (lowerUser === 'moderator') assignedRank = 'Moderator';
     else if (lowerUser === 'don') assignedRank = 'Don';
@@ -590,22 +598,25 @@ function handleAuthLogin(e) {
     else if (lowerUser === 'soldiers') assignedRank = 'Soldiers';
     else if (lowerUser === 'associates') assignedRank = 'Associates';
 
-    const savedProfiles = getSafeStorage('ton_all_profiles') || {};
-    if (!savedProfiles[user]) {
-      savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: assignedRank, avatar: '', groupType: 'Family' };
-      localStorage.setItem('ton_all_profiles', JSON.stringify(savedProfiles));
-    } else {
-      savedProfiles[user].job = assignedRank;
-      localStorage.setItem('ton_all_profiles', JSON.stringify(savedProfiles));
+    // ANTI-BUG ROSTER: Jika rank sudah pernah diubah di Roster, WAJIB gunakan rank terbaru dari profil!
+    if (savedProfiles[user] && savedProfiles[user].job) {
+        finalRank = savedProfiles[user].job;
     }
-    
-    initSession(assignedRank, user, true);
+
+    if (!savedProfiles[user]) {
+      savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: finalRank, avatar: '', groupType: 'Family' };
+    } else {
+      savedProfiles[user].job = finalRank; // Simpan rank yang benar
+    }
+
+    saveAppData(); 
+    initSession(finalRank, user, true);
     return;
   }
 
-  sendDiscordWebhook(LOGS_WEBHOOK_URL, "UNAUTHORIZED ATTEMPT", `Gagal login dengan ID: **${user}**`, [], 15158332);
   triggerBlockedModal();
 }
+
 
 function triggerBlockedModal() { document.getElementById('blocked-modal')?.classList.remove('hidden'); }
 function closeBlockedModal() { document.getElementById('blocked-modal')?.classList.add('hidden'); }
@@ -2383,33 +2394,27 @@ function renderTonCatalog() {
 }
 
 function adminUpdateCatalogUser(targetUsername, rankInputId, groupSelectId) {
-  const currentRank = getUserRank();
-  if (!isDonTier(currentRank)) { showToast("ACCESS DENIED", "Rank Anda tidak memiliki izin mengubah data Roster!", "error"); return; }
-
   const newRank = document.getElementById(rankInputId)?.value || 'Soldiers';
   const newGroup = document.getElementById(groupSelectId)?.value || 'Internal';
-
-  if (!isTopAdmin(currentRank) && ['Admin', 'Moderator'].includes(newRank)) {
-    showToast("ACCESS DENIED", "Rank Don/Underboss tidak dapat mengangkat seseorang menjadi Admin/Moderator!", "error");
-    return;
+  
+  if (!savedProfiles[targetUsername]) {
+      savedProfiles[targetUsername] = { name: targetUsername, job: 'Soldiers', groupType: 'Family' };
   }
+  
+  // Update di data profil utama Roster
+  savedProfiles[targetUsername].job = newRank; 
+  savedProfiles[targetUsername].groupType = newGroup;
 
-  const savedProfiles = getSafeStorage('ton_all_profiles') || {};
-  if (!savedProfiles[targetUsername]) savedProfiles[targetUsername] = { name: targetUsername, phone: '-', idcard: '-', job: 'Soldiers', avatar: '', groupType: 'Family' };
-
-  const oldRank = savedProfiles[targetUsername].job || 'Soldiers';
-  const oldGroup = savedProfiles[targetUsername].groupType || 'Family';
-  savedProfiles[targetUsername].job = newRank; savedProfiles[targetUsername].groupType = newGroup;
-  localStorage.setItem('ton_all_profiles', JSON.stringify(savedProfiles));
-  if (targetUsername === currentLoggedInUser) renderProfilePage();
-  const profAvatar = (savedProfiles[targetUsername].avatar && savedProfiles[targetUsername].avatar.startsWith('http')) ? savedProfiles[targetUsername].avatar : null;
-  sendDiscordWebhook(PROFILE_WEBHOOK_URL, "👑 ADMIN PROMOTION / RANK UPDATE", `Administrator **${currentLoggedInUser || 'ADMIN'}** baru saja memperbarui jabatan/divisi anggota!`, [
-    { name: "👤 Anggota Target", value: `**${targetUsername}** (${savedProfiles[targetUsername].name || '-'})`, inline: true },
-    { name: "🛡️ Divisi / Kategori", value: `Dari: \`${oldGroup}\` ➔ **\`${newGroup}\`**`, inline: true },
-    { name: "🔄 Perubahan Jabatan (Rank)", value: `Dari: \`${oldRank}\` ➔ Menjadi: **\`${newRank}\`**`, inline: false }
-  ], 15105570, profAvatar);
-  showToast("ROSTER UPDATED", ` ${targetUsername} upgraded to a Division "${newGroup}" with Rank"${newRank}".`, "success");
+  // ANTI-BUG LOGIN: Sinkronkan juga rank-nya ke data Akun Custom agar Login tidak bentrok!
+  const lowerTarget = targetUsername.toLowerCase();
+  if (customAccounts[lowerTarget]) {
+      customAccounts[lowerTarget].rank = newRank;
+  }
+  
+  saveAppData(); // Tembak langsung ke Firebase
   renderTonCatalog();
+  if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+  if (typeof showToast === 'function') showToast("ROSTER UPDATED", `Data ${targetUsername} berhasil diperbarui menjadi ${newRank}!`, "success");
 }
 
 function adminDeleteUser(targetUsername) {
