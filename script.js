@@ -616,6 +616,7 @@ function handleAuthLogin(e) {
 
   let finalRank = '';
   let isValidLogin = false;
+  const lowerUser = user ? user.toLowerCase() : '';
 
   // 1. CEK AKUN CUSTOM
   if (customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
