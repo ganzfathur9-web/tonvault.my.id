@@ -2855,7 +2855,9 @@ function deleteCustomAccount(username) {
   if (getUserRank() !== 'Moderator') {
     showToast("ACCESS DENIED", "Hanya rank Moderator yang berhak mengelola akun login custom!", "error");
     return;
-  }
+
+    if (typeof saveAppData === 'function') saveAppData();
+}
   
   showCustomConfirm("DELETE LOGIN ACCOUNT", `Permanently delete login account "${username}"?`, () => {
     delete customAccounts[username];
