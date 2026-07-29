@@ -183,7 +183,12 @@ function getSafeStorage(key) {
 }
 
 function saveAppData() {
-  // Sistem Super Aman: Cek apakah variabel ada (typeof) sebelum menyimpannya
+  // PROTEKSI MUTLAK: Jangan izinkan web menimpa database awan jika data awan belum selesai di-download!
+  if (db && !isFirebaseSynced) {
+    console.warn("⚠️ Mencegah Overwrite! Menunggu sinkronisasi Firebase selesai...");
+    return;
+  }
+
   const allData = {
     adminTransactions: typeof adminTransactions !== 'undefined' ? adminTransactions : [],
     orgLeaderboard: typeof orgLeaderboard !== 'undefined' ? orgLeaderboard : [],
@@ -198,12 +203,16 @@ function saveAppData() {
     savedProfiles: typeof savedProfiles !== 'undefined' ? savedProfiles : {}
   };
 
-  // 1. Kirim secara Real-Time ke Firebase Cloud
-  if (typeof db !== 'undefined' && db) {
-    db.ref('ton_global_state').set(allData).catch(err => {
-      console.warn("Gagal simpan ke Firebase:", err);
-    });
+  if (db) {
+    db.ref('ton_global_state').set(allData).catch(err => console.warn("Firebase Error:", err));
   }
+
+  try {
+    localStorage.setItem('ton_global_state', JSON.stringify(allData));
+  } catch (e) {
+    console.warn("Local storage error.");
+  }
+}
 
   // 2. Simpan cadangan ke Memori Lokal (Fallback)
   try {
@@ -218,20 +227,25 @@ function saveAppData() {
 }
 
 // ============================================================================
-// ☁️ ENGINE SINKRONISASI FIREBASE REAL-TIME
+// ☁️ ENGINE SINKRONISASI FIREBASE REAL-TIME (ANTI-OVERWRITE)
 // ============================================================================
+let isFirebaseSynced = false; // GEMBOK PELINDUNG
+
 function initCloudRealtimeSync() {
   if (!db) {
     const backup = getSafeStorage('ton_global_state');
     if (backup) applyGlobalState(backup);
+    isFirebaseSynced = true;
     return;
   }
+  
   db.ref('ton_global_state').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
       applyGlobalState(data);
-      refreshAllUIDisplays();
     }
+    isFirebaseSynced = true; // KUNCI DIBUKA: Menandakan data awan sudah sukses ditarik!
+    if (typeof refreshAllUIDisplays === 'function') refreshAllUIDisplays();
   });
 }
 
@@ -549,72 +563,72 @@ async function verifyUserDiscordAccount(tokenType, accessToken) {
 
 function handleAuthLogin(e) {
   e.preventDefault();
+
+  // PROTEKSI LOGIN: Tunggu sampai Firebase selesai memuat data Akun!
+  if (db && !isFirebaseSynced) {
+    if (typeof showToast === 'function') showToast("LOADING", "Menyinkronkan data server, mohon tunggu 2 detik lalu klik login lagi...", "error");
+    return;
+  }
+
   const user = document.getElementById('auth-username')?.value.trim();
   const pass = document.getElementById('auth-passcode')?.value.trim();
-  const lowerUser = user.toLowerCase();
+  const lowerUser = user ? user.toLowerCase() : '';
 
   if (!user || !pass) {
-      if(typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
+      if (typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
       return;
   }
 
-  if (blacklistedUsers.includes(lowerUser)) {
-    if(typeof showToast === 'function') showToast("ACCOUNT FROZEN", "Akun Anda dibekukan (Blacklist)!", "error");
-    triggerBlockedModal();
+  if (typeof blacklistedUsers !== 'undefined' && blacklistedUsers.includes(lowerUser)) {
+    if (typeof showToast === 'function') showToast("ACCOUNT FROZEN", "Akun Anda dibekukan (Blacklist)!", "error");
+    if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
     return;
   }
 
   // 1. CEK AKUN CUSTOM DARI ACCOUNT MANAGE
-  if (customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
+  if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
     let finalRank = customAccounts[lowerUser].rank;
 
-    // ANTI-BUG ROSTER: Jika rank sudah pernah diubah di Roster, WAJIB gunakan rank terbaru dari profil!
-    if (savedProfiles[user] && savedProfiles[user].job) {
-        finalRank = savedProfiles[user].job;
-    }
-
-    if (!savedProfiles[user]) {
-      savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: finalRank, avatar: '', groupType: 'Family' };
-    } else {
-      savedProfiles[user].job = finalRank; // Simpan rank yang benar
+    // Sinkronkan selalu dengan Roster terbaru
+    if (typeof savedProfiles !== 'undefined') {
+        if (savedProfiles[user] && savedProfiles[user].job) finalRank = savedProfiles[user].job;
+        if (!savedProfiles[user]) {
+          savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: finalRank, avatar: '', groupType: 'Family' };
+        } else {
+          savedProfiles[user].job = finalRank; 
+        }
     }
     
     saveAppData(); 
-    initSession(finalRank, user, true);
+    if (typeof initSession === 'function') initSession(finalRank, user, true);
     return;
   }
   
   // 2. CEK LOGIN DEFAULT / BAWAAN SISTEM
   if (pass === 'admin123' || pass === 'xxx123') {
-      let assignedRank = 'Soldiers';
-    if (lowerUser === 'admin' || lowerUser === 'xxx') assignedRank = 'Admin';
-    else if (lowerUser === 'moderator') assignedRank = 'Moderator';
-    else if (lowerUser === 'don') assignedRank = 'Don';
-    else if (lowerUser === 'underboss') assignedRank = 'Underboss';
-    else if (lowerUser === 'bisnis') assignedRank = 'Bisnis';
-    else if (lowerUser === 'consigliere') assignedRank = 'Consigliere';
-    else if (lowerUser === 'captain') assignedRank = 'Captain';
-    else if (lowerUser === 'capo') assignedRank = 'Capo';
-    else if (lowerUser === 'soldiers') assignedRank = 'Soldiers';
-    else if (lowerUser === 'associates') assignedRank = 'Associates';
+    let finalRank = 'Soldiers';
+    if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
+    else if (lowerUser === 'moderator') finalRank = 'Moderator';
+    else if (lowerUser === 'don') finalRank = 'Don';
+    else if (lowerUser === 'underboss') finalRank = 'Underboss';
+    else if (lowerUser === 'bisnis') finalRank = 'Bisnis';
+    else if (lowerUser === 'associates') finalRank = 'Associates';
 
-    // ANTI-BUG ROSTER: Jika rank sudah pernah diubah di Roster, WAJIB gunakan rank terbaru dari profil!
-    if (savedProfiles[user] && savedProfiles[user].job) {
-        finalRank = savedProfiles[user].job;
-    }
-
-    if (!savedProfiles[user]) {
-      savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: finalRank, avatar: '', groupType: 'Family' };
-    } else {
-      savedProfiles[user].job = finalRank; // Simpan rank yang benar
+    if (typeof savedProfiles !== 'undefined') {
+        if (savedProfiles[user] && savedProfiles[user].job) finalRank = savedProfiles[user].job;
+        if (!savedProfiles[user]) {
+          savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: finalRank, avatar: '', groupType: 'Family' };
+        } else {
+          savedProfiles[user].job = finalRank; 
+        }
     }
 
     saveAppData(); 
-    initSession(finalRank, user, true);
+    if (typeof initSession === 'function') initSession(finalRank, user, true);
     return;
   }
 
-  triggerBlockedModal();
+  if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
 }
 
 
