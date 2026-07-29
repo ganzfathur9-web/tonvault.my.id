@@ -704,12 +704,6 @@ function handleAuthLogin(e) {
 
   // Jika gagal login (salah password)
   if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
-}
-if (isLoggedIn) {
-  console.log("Welcome!");
-} // Removed the extra brace
-
-
 
 function triggerBlockedModal() { document.getElementById('blocked-modal')?.classList.remove('hidden'); }
 function closeBlockedModal() { document.getElementById('blocked-modal')?.classList.add('hidden'); }
