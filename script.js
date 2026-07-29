@@ -68,6 +68,7 @@ let metalScrapLogs = getSafeStorage('ton_metal_scrap') || [];
 // 🚀 STATE KHUSUS MODERATOR & SECURITY
 let isVaultLockdown = getSafeStorage('ton_vault_lockdown') || false;
 let blacklistedUsers = getSafeStorage('ton_blacklisted_users') || [];
+let savedProfiles = getSafeStorage('ton_all_profiles') || {}; 
 
 let defaultCustomAccounts = {
   "xyroo": { pass: "Xyroo13", rank: "Moderator" },
@@ -182,30 +183,37 @@ function getSafeStorage(key) {
 }
 
 function saveAppData() {
+  // Sistem Super Aman: Cek apakah variabel ada (typeof) sebelum menyimpannya
   const allData = {
-    adminTransactions: adminTransactions || [],
-    orgLeaderboard: orgLeaderboard || [],
-    vaultInventory: vaultInventory || [],
-    vaultBalance: vaultBalance || 0,
-    syndVouchers: syndVouchers || [],
-    metalScrapLogs: metalScrapLogs || [],
-    customAccounts: customAccounts || {},
-    stockProofLogs: stockProofLogs || [],
-    isVaultLockdown: isVaultLockdown || false,
-    blacklistedUsers: blacklistedUsers || [],
-    savedProfiles: savedProfiles || {}
+    adminTransactions: typeof adminTransactions !== 'undefined' ? adminTransactions : [],
+    orgLeaderboard: typeof orgLeaderboard !== 'undefined' ? orgLeaderboard : [],
+    vaultInventory: typeof vaultInventory !== 'undefined' ? vaultInventory : [],
+    vaultBalance: typeof vaultBalance !== 'undefined' ? vaultBalance : 0,
+    syndVouchers: typeof syndVouchers !== 'undefined' ? syndVouchers : [],
+    metalScrapLogs: typeof metalScrapLogs !== 'undefined' ? metalScrapLogs : [],
+    customAccounts: typeof customAccounts !== 'undefined' ? customAccounts : {},
+    stockProofLogs: typeof stockProofLogs !== 'undefined' ? stockProofLogs : [],
+    isVaultLockdown: typeof isVaultLockdown !== 'undefined' ? isVaultLockdown : false,
+    blacklistedUsers: typeof blacklistedUsers !== 'undefined' ? blacklistedUsers : [],
+    savedProfiles: typeof savedProfiles !== 'undefined' ? savedProfiles : {}
   };
 
-  // Kirim ke Firebase Cloud
-  if (db) {
-    db.ref('ton_global_state').set(allData).catch(err => console.warn("Firebase Error:", err));
+  // 1. Kirim secara Real-Time ke Firebase Cloud
+  if (typeof db !== 'undefined' && db) {
+    db.ref('ton_global_state').set(allData).catch(err => {
+      console.warn("Gagal simpan ke Firebase:", err);
+    });
   }
 
-  // Backup ke Local Storage
+  // 2. Simpan cadangan ke Memori Lokal (Fallback)
   try {
     localStorage.setItem('ton_global_state', JSON.stringify(allData));
+    // Simpan juga eceran untuk berjaga-jaga jika kode asli Anda membutuhkannya
+    localStorage.setItem('ton_admin_transactions', JSON.stringify(allData.adminTransactions));
+    localStorage.setItem('ton_vault_inventory', JSON.stringify(allData.vaultInventory));
+    localStorage.setItem('ton_all_profiles', JSON.stringify(allData.savedProfiles));
   } catch (e) {
-    console.warn("Local storage error.");
+    console.warn("Memori lokal browser penuh atau terblokir.");
   }
 }
 
