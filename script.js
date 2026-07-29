@@ -705,6 +705,9 @@ function handleAuthLogin(e) {
   // Jika gagal login (salah password)
   if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
 }
+if (isLoggedIn) {
+  console.log("Welcome!");
+} // Removed the extra brace
 
 
 
