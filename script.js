@@ -658,7 +658,6 @@ function handleAuthLogin(e) {
 
     saveAppData(); 
     if (typeof initSession === 'function') initSession(finalRank, user, true);
-    return;
   }
 
   if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
