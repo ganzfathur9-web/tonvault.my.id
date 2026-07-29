@@ -2411,6 +2411,7 @@ function renderTonCatalog() {
   tableBody.innerHTML = '';
   filteredUsers.forEach((username, idx) => {
     const prof = savedProfiles[username] || {};
+    if (!prof || typeof prof !== 'object' || !prof.name) return;
     const rankInputId = `catalog-rank-${idx}`;
     const groupSelectId = `catalog-group-${idx}`;
     const safeName = prof.name || '-';
@@ -2697,46 +2698,48 @@ function updateDashboardData() {
   renderStaffKPITable();
 }
 
-// ==========================================
-// 🚨 FITUR RESET DENGAN DOUBLE AUTENTIKASI
-// ==========================================
+// ============================================================================
+// 🚨 FITUR RESET DENGAN DOUBLE AUTENTIKASI (ROSTER SAFE)
+// ============================================================================
 function triggerSystemReset() {
-  if (getUserRank() !== 'Moderator') {
-    showToast("ACCESS DENIED", "The System Reset feature is EXCLUSIVE to the Moderator rank!", "error");
-    return;
-  }
-
-  showCustomConfirm(
-    "CONFIRMATION 1/2: SYSTEM RESET", 
-    "Severe Warning: All transaction history, roster account data, and logs will be permanently deleted. Are you sure you want to proceed?", 
-    () => {
-      setTimeout(() => {
-        showCustomConfirm(
-          "FINAL CONFIRMATION 2/2: REPEAT WARNING", 
-          "This action cannot be undone! Are you absolutely 100% sure you want to delete everything?", 
-          () => {
-            localStorage.removeItem('ton_admin_transactions');
-            localStorage.removeItem('ton_all_profiles');
-            localStorage.removeItem('ton_org_leaderboard');
-            localStorage.removeItem('ton_metal_scrap');
-            
-            adminTransactions = [];
-            orgLeaderboard = [];
-            metalScrapLogs = [];
-            vaultBalance = 0;
-            
-            saveAppData();
-
-            showToast("SYSTEM RESET", "The entire transaction history and member data have been completely reset!", "success");
-            
-            setTimeout(() => {
-              location.reload();
-            }, 1500);
-          }
-        );
-      }, 300);
+    if (getUserRank() !== 'Moderator') {
+        showToast("ACCESS DENIED", "The System Reset feature is EXCLUSIVE to the Moderator rank!", "error");
+        return;
     }
-  );
+
+    showCustomConfirm(
+        "CONFIRMATION 1/2: SYSTEM RESET",
+        "Warning: Transaction history, cash, and logs will be permanently deleted. (DATA ROSTER & AKUN TETAP AMAN). Are you sure?",
+        () => {
+            setTimeout(() => {
+                showCustomConfirm(
+                    "FINAL CONFIRMATION 2/2: REPEAT WARNING",
+                    "This action cannot be undone! Are you absolutely 100% sure you want to delete transaction history?",
+                    () => {
+                        // 1. HAPUS MEMORI LOKAL (KECUALI ton_all_profiles)
+                        localStorage.removeItem('ton_admin_transactions');
+                        localStorage.removeItem('ton_org_leaderboard');
+                        localStorage.removeItem('ton_metal_scrap');
+                        
+                        // 2. KOSONGKAN VARIABEL TRANSAKSI (JANGAN KOSONGKAN savedProfiles/customAccounts)
+                        adminTransactions = [];
+                        orgLeaderboard = [];
+                        metalScrapLogs = [];
+                        vaultBalance = 0;
+
+                        // 3. SIMPAN KE FIREBASE
+                        if (typeof saveAppData === 'function') saveAppData();
+
+                        showToast("SYSTEM RESET", "Riwayat transaksi berhasil direset! Data Roster AMAN.", "success");
+
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    }
+                );
+            }, 300); // Sedikit jeda agar modal pertama menutup dengan mulus
+        }
+    );
 }
 
 // ==========================================
