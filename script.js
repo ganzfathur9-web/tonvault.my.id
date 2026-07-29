@@ -72,7 +72,7 @@ let savedProfiles = getSafeStorage('ton_all_profiles') || {};
 
 let defaultCustomAccounts = {
   "xyroo": { pass: "Xyroo13", rank: "Moderator" },
-  "xyro013": { pass: "Xyroo13", rank: "Don" },
+  "mike": { pass: "mike55", rank: "Don" },
   "nayi123": { pass: "nayi123", rank: "Bisnis" },
   "nayi12345": { pass: "nayi12345", rank: "Associates" },
 };
