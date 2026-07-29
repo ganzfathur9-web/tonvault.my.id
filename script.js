@@ -706,49 +706,6 @@ function handleAuthLogin(e) {
   if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
 }
 
-  // 1. CEK AKUN CUSTOM DARI ACCOUNT MANAGE
-  if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
-    let finalRank = customAccounts[lowerUser].rank;
-
-    // Sinkronkan selalu dengan Roster terbaru
-    if (typeof savedProfiles !== 'undefined') {
-        if (savedProfiles[user] && savedProfiles[user].job) finalRank = savedProfiles[user].job;
-        if (!savedProfiles[user]) {
-          savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: finalRank, avatar: '', groupType: 'Family' };
-        } else {
-          savedProfiles[user].job = finalRank; 
-        }
-    }
-    
-    saveAppData(); 
-    if (typeof initSession === 'function') initSession(finalRank, user, true);
-  }
-  
-  // 2. CEK LOGIN DEFAULT / BAWAAN SISTEM
-  if (pass === 'admin123' || pass === 'xxx123') {
-    let finalRank = 'Soldiers';
-    if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
-    else if (lowerUser === 'moderator') finalRank = 'Moderator';
-    else if (lowerUser === 'don') finalRank = 'Don';
-    else if (lowerUser === 'underboss') finalRank = 'Underboss';
-    else if (lowerUser === 'bisnis') finalRank = 'Bisnis';
-    else if (lowerUser === 'associates') finalRank = 'Associates';
-
-    if (typeof savedProfiles !== 'undefined') {
-        if (savedProfiles[user] && savedProfiles[user].job) finalRank = savedProfiles[user].job;
-        if (!savedProfiles[user]) {
-          savedProfiles[user] = { name: user.toUpperCase(), phone: '0812-XXXX', idcard: 'TON-' + Math.floor(1000 + Math.random()*9000), job: finalRank, avatar: '', groupType: 'Family' };
-        } else {
-          savedProfiles[user].job = finalRank; 
-        }
-    }
-
-    saveAppData(); 
-    if (typeof initSession === 'function') initSession(finalRank, user, true);
-  }
-
-  if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
-
 
 
 function triggerBlockedModal() { document.getElementById('blocked-modal')?.classList.remove('hidden'); }
