@@ -136,7 +136,7 @@ let isVaultLockdown = getSafeStorage('ton_vault_lockdown') || false;
 let blacklistedUsers = getSafeStorage('ton_blacklisted_users') || [];
 let savedProfiles = getSafeStorage('ton_all_profiles') || {}; 
 
-let defaultCustomAccounts = {
+llet defaultCustomAccounts = {
   "xyroo": { pass: "Xyroo13", rank: "Moderator" },
   "mike": { pass: "mike55", rank: "Don" },
   "nayi123": { pass: "nayi123", rank: "Bisnis" },
@@ -3285,62 +3285,52 @@ setTimeout(() => {
 
 
 // ==========================================
-// 🔑 FITUR BARU: GANTI PASSWORD USER (UI MODAL CANTIK)
+// 🔑 ROBOT INJEKSI: TOMBOL GANTI PASSWORD
 // ==========================================
-function promptChangePassword() {
+setInterval(() => {
+    // 1. Cari tempat meletakkan tombol (di bawah badge pangkat)
+    const badgeElem = document.getElementById('profile-rank-badge');
+    const btnId = 'change-pwd-btn-force';
+    
+    // 2. Jika badge ada, dan tombol belum ada, panggil tombolnya!
+    if (badgeElem && !document.getElementById(btnId)) {
+        const btnHtml = `<button id="${btnId}" onclick="promptChangePasswordModal()" class="mt-2.5 flex items-center gap-1.5 text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1.5 rounded-lg hover:bg-amber-500 hover:text-black transition shadow-sm uppercase font-bold"><i data-lucide="key" class="w-3.5 h-3.5"></i> GANTI PASSWORD</button>`;
+        badgeElem.insertAdjacentHTML('afterend', btnHtml);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+}, 1000);
+
+function promptChangePasswordModal() {
   const activeName = (currentLoggedInUser || '').toLowerCase();
-  
   if (!customAccounts[activeName]) {
-    showToast("AKSES DITOLAK", "Akun bawaan sistem tidak bisa diubah. Fitur ini hanya untuk akun member.", "error");
+    showToast("AKSES DITOLAK", "Fitur ini khusus untuk akun member (Roster).", "error");
     return;
   }
 
-  // Trik Ajaib: Ubah kotak input Scrap menjadi kotak Password (Tersensor)
   const promptInput = document.getElementById('custom-prompt-input');
   if (promptInput) promptInput.type = 'password';
 
-  // 1. Minta Password Lama dengan UI Custom
-  showCustomPrompt(
-    "VERIFIKASI KEAMANAN (1/2)",
-    "Masukkan Password LAMA Anda:",
-    "",
-    (oldPass) => {
-      // Jika dibatalkan, kembalikan input jadi teks normal
-      if (!oldPass) {
-         if (promptInput) promptInput.type = 'text'; 
-         return; 
-      }
-      
+  showCustomPrompt("VERIFIKASI KEAMANAN (1/2)", "Masukkan Password LAMA Anda:", "", (oldPass) => {
+      if (!oldPass) { if (promptInput) promptInput.type = 'text'; return; }
       if (customAccounts[activeName].pass !== oldPass) {
         showToast("GAGAL", "Password lama yang Anda masukkan SALAH!", "error");
-        if (promptInput) promptInput.type = 'text'; // Kembalikan normal
+        if (promptInput) promptInput.type = 'text'; 
         return;
       }
 
-      // 2. Minta Password Baru (Diberi jeda 0.3 detik agar animasinya mulus)
       setTimeout(() => {
-          if (promptInput) promptInput.type = 'password'; // Sensor lagi untuk password baru
-          
-          showCustomPrompt(
-            "UBAH PASSWORD (2/2)",
-            "Masukkan Password BARU Anda (Min. 4 karakter):",
-            "",
-            (newPass) => {
-              // Kembalikan ke teks normal agar fitur Metal Scrap tidak ikut tersensor nanti
+          if (promptInput) promptInput.type = 'password'; 
+          showCustomPrompt("UBAH PASSWORD (2/2)", "Masukkan Password BARU Anda (Min. 4 karakter):", "", (newPass) => {
               if (promptInput) promptInput.type = 'text'; 
-              
               if (!newPass || newPass.length < 4) {
                 showToast("GAGAL", "Ganti password dibatalkan atau terlalu pendek!", "error");
                 return;
               }
-
-              // 3. Simpan
               customAccounts[activeName].pass = newPass;
               saveAppData();
-              showToast("BERHASIL", "Password Anda berhasil diubah! Gunakan password baru untuk login berikutnya.", "success");
+              showToast("BERHASIL", "Password Anda berhasil diubah!", "success");
             }
           );
       }, 300);
-    }
-  );
+  });
 }
