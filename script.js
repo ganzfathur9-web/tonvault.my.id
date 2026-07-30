@@ -397,7 +397,9 @@ function closeCustomConfirm() {
 
 function getUserRank() {
   const savedProfiles = getSafeStorage('ton_all_profiles') || {};
-  const prof = savedProfiles[currentLoggedInUser] || {};
+  // Pastikan sistem selalu mencari dengan huruf kecil agar tidak error
+  const lowerUser = (currentLoggedInUser || '').toLowerCase(); 
+  const prof = savedProfiles[lowerUser] || {};
   return prof.job || currentUserRole || 'Soldiers';
 }
 
@@ -3080,28 +3082,40 @@ function checkAndApplyRankChanges() {
     if (!currentLoggedInUser) return; 
 
     let latestRank = currentUserRole;
-    const lowerUser = currentLoggedInUser.toLowerCase();
+    const lowerUser = currentLoggedInUser.toLowerCase(); // Kunci utamanya di sini!
 
-    if (typeof savedProfiles !== 'undefined' && savedProfiles[currentLoggedInUser] && savedProfiles[currentLoggedInUser].job) {
-        latestRank = savedProfiles[currentLoggedInUser].job;
-    } else if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser]) {
+    // 1. Cek di Database Roster
+    if (typeof savedProfiles !== 'undefined' && savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
+        latestRank = savedProfiles[lowerUser].job;
+    } 
+    // 2. Jika tidak ada, cek di Akun Custom
+    else if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser]) {
         latestRank = customAccounts[lowerUser].rank;
     }
 
+    // 3. Jika Sistem Mendeteksi Pangkat Berubah
     if (latestRank !== currentUserRole) {
         currentUserRole = latestRank; 
         
+        // Simpan sesi baru ke laptop pengguna
         localStorage.setItem('ton_current_session', JSON.stringify({ role: currentUserRole, name: currentLoggedInUser }));
 
+        // Ganti tulisan pangkat di pojok kiri bawah
         const roleElem = document.getElementById('user-role-text');
         if (roleElem) roleElem.innerText = currentUserRole.toUpperCase();
 
+        // Buka / Tutup gembok menu sesuai pangkat baru
         if (typeof updateRBACUI === 'function') updateRBACUI();
 
+        // Jika pangkat diturunkan saat sedang buka Admin Panel, tendang kembali ke Shop
         if (typeof canViewAdminPanel === 'function' && !canViewAdminPanel(currentUserRole)) {
             if (typeof switchTab === 'function') switchTab('weapon-shop');
         }
 
+        // Segarkan halaman profil IC-nya
+        if (typeof renderProfilePage === 'function') renderProfilePage();
+
+        // Munculkan notifikasi sukses!
         if (typeof showToast === 'function') showToast("RANK UPDATED", `Sistem mendeteksi perubahan: Pangkat Anda kini menjadi ${currentUserRole.toUpperCase()}`, "success");
     }
 }
