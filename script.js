@@ -3285,81 +3285,62 @@ setTimeout(() => {
 
 
 // ==========================================
-// 🔑 FITUR BARU: GANTI PASSWORD USER
+// 🔑 FITUR BARU: GANTI PASSWORD USER (UI MODAL CANTIK)
 // ==========================================
 function promptChangePassword() {
   const activeName = (currentLoggedInUser || '').toLowerCase();
   
-  // Cek apakah akun ini terdaftar di database Roster/Custom
   if (!customAccounts[activeName]) {
     showToast("AKSES DITOLAK", "Akun bawaan sistem tidak bisa diubah. Fitur ini hanya untuk akun member.", "error");
     return;
   }
 
-  // 1. Minta Password Lama
-  const oldPass = prompt("KEMANAN SISTEM: Masukkan Password LAMA Anda:");
-  if (!oldPass) return; // Jika user menekan Cancel
-  
-  if (customAccounts[activeName].pass !== oldPass) {
-    showToast("GAGAL", "Password lama yang Anda masukkan SALAH!", "error");
-    return;
-  }
+  // Trik Ajaib: Ubah kotak input Scrap menjadi kotak Password (Tersensor)
+  const promptInput = document.getElementById('custom-prompt-input');
+  if (promptInput) promptInput.type = 'password';
 
-  // 2. Minta Password Baru
-  const newPass = prompt("KEMANAN SISTEM: Masukkan Password BARU Anda (Minimal 4 karakter):");
-  if (!newPass || newPass.length < 4) {
-    showToast("GAGAL", "Password baru dibatalkan atau terlalu pendek!", "error");
-    return;
-  }
+  // 1. Minta Password Lama dengan UI Custom
+  showCustomPrompt(
+    "VERIFIKASI KEAMANAN (1/2)",
+    "Masukkan Password LAMA Anda:",
+    "",
+    (oldPass) => {
+      // Jika dibatalkan, kembalikan input jadi teks normal
+      if (!oldPass) {
+         if (promptInput) promptInput.type = 'text'; 
+         return; 
+      }
+      
+      if (customAccounts[activeName].pass !== oldPass) {
+        showToast("GAGAL", "Password lama yang Anda masukkan SALAH!", "error");
+        if (promptInput) promptInput.type = 'text'; // Kembalikan normal
+        return;
+      }
 
-  // 3. Simpan dan Sinkronisasi
-  customAccounts[activeName].pass = newPass;
-  saveAppData(); // Simpan ke Firebase dan Memori Lokal
-  
-  showToast("BERHASIL", "Password Anda berhasil diubah! Gunakan password baru untuk login berikutnya.", "success");
-}
+      // 2. Minta Password Baru (Diberi jeda 0.3 detik agar animasinya mulus)
+      setTimeout(() => {
+          if (promptInput) promptInput.type = 'password'; // Sensor lagi untuk password baru
+          
+          showCustomPrompt(
+            "UBAH PASSWORD (2/2)",
+            "Masukkan Password BARU Anda (Min. 4 karakter):",
+            "",
+            (newPass) => {
+              // Kembalikan ke teks normal agar fitur Metal Scrap tidak ikut tersensor nanti
+              if (promptInput) promptInput.type = 'text'; 
+              
+              if (!newPass || newPass.length < 4) {
+                showToast("GAGAL", "Ganti password dibatalkan atau terlalu pendek!", "error");
+                return;
+              }
 
-// Menimpa fungsi Profil bawaan agar otomatis memunculkan tombol Ganti Password
-function renderProfilePage() {
-  const activeName = currentLoggedInUser || 'GUEST';
-  const activeRole = getUserRank().toUpperCase();
-  const nameElem = document.getElementById('profile-name');
-  const badgeElem = document.getElementById('profile-rank-badge');
-  
-  if (nameElem) nameElem.innerText = activeName;
-  if (badgeElem) {
-    badgeElem.innerText = activeRole;
-    
-    // Injeksi tombol Ganti Password (jika belum ada)
-    if (!document.getElementById('change-pwd-btn')) {
-       const btnHtml = `<button id="change-pwd-btn" onclick="promptChangePassword()" class="mt-2.5 flex items-center gap-1.5 text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1.5 rounded-lg hover:bg-amber-500 hover:text-black transition shadow-sm uppercase font-bold"><i data-lucide="key" class="w-3.5 h-3.5"></i> GANTI PASSWORD</button>`;
-       badgeElem.insertAdjacentHTML('afterend', btnHtml);
-       if (typeof lucide !== 'undefined') lucide.createIcons();
+              // 3. Simpan
+              customAccounts[activeName].pass = newPass;
+              saveAppData();
+              showToast("BERHASIL", "Password Anda berhasil diubah! Gunakan password baru untuk login berikutnya.", "success");
+            }
+          );
+      }, 300);
     }
-  }
-
-  const savedProfiles = getSafeStorage('ton_all_profiles') || {};
-  const prof = savedProfiles[activeName] || { name: '', phone: '', idcard: '', job: '', avatar: '' };
-  updateUserAvatars(prof.avatar, activeName);
-
-  if (document.getElementById('ic-name')) document.getElementById('ic-name').value = prof.name || '';
-  if (document.getElementById('ic-phone')) document.getElementById('ic-phone').value = prof.phone || '';
-  if (document.getElementById('ic-idcard')) document.getElementById('ic-idcard').value = prof.idcard || '';
-  if (document.getElementById('ic-avatar')) {
-    const isBase64 = prof.avatar && prof.avatar.startsWith('data:image');
-    document.getElementById('ic-avatar').value = isBase64 ? '' : (prof.avatar || '');
-  }
-
-  const icJob = document.getElementById('ic-job');
-  const icJobLabel = document.getElementById('ic-job-label');
-  if (icJob && icJobLabel) {
-    icJob.value = prof.job || activeRole || 'Soldiers';
-    if (!isDonTier(getUserRank())) {
-      icJob.disabled = true; icJob.classList.add('opacity-50', 'cursor-not-allowed', 'border-red-900/50');
-      icJobLabel.innerHTML = 'Rank <span class="text-red-500 font-bold">(🔒 LOCKED BY ADMIN)</span>';
-    } else {
-      icJob.disabled = false; icJob.classList.remove('opacity-50', 'cursor-not-allowed', 'border-red-900/50');
-      icJobLabel.innerHTML = 'Pekerjaan / Gang / Jabatan <span class="text-emerald-400 font-bold">(🔓 ADMIN ACCESS)</span>';
-    }
-  }
+  );
 }
