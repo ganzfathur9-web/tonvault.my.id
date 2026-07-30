@@ -75,6 +75,7 @@ let defaultCustomAccounts = {
   "mike": { pass: "mike55", rank: "Don" },
   "nayi123": { pass: "nayi123", rank: "Bisnis" },
   "nayi12345": { pass: "nayi12345", rank: "Associates" },
+  "nay": { pass: "nay", rank: "Soldiers" },
 };
 // Ganti baris 54 dengan kode ini agar akun dari VS Code selalu terbaca:
 let savedAccounts = getSafeStorage('ton_custom_accounts') || {};
