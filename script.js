@@ -3338,3 +3338,198 @@ function promptChangePasswordModal() {
       }, 300);
   });
 }
+
+
+// ============================================================================
+// 🛡️ PENYEMPURNAAN HAK AKSES MODERATOR (SISTEM KEBAL HURUF BESAR/KECIL)
+// ============================================================================
+
+// 1. Pembersih Pembaca Pangkat (Menghapus Spasi Gaib & Huruf Kapital)
+function isTopAdmin(rank) { return ['moderator'].includes(String(rank).toLowerCase().trim()); }
+function isDonTier(rank) { return ['moderator', 'don', 'underboss'].includes(String(rank).toLowerCase().trim()); }
+function isBisnisTier(rank) { return ['moderator', 'don', 'underboss', 'bisnis'].includes(String(rank).toLowerCase().trim()); }
+function isReadOnlyAdminTier(rank) { return ['capo', 'captain', 'consigliere'].includes(String(rank).toLowerCase().trim()); }
+function canViewAdminPanel(rank) { return isBisnisTier(rank) || isReadOnlyAdminTier(rank); }
+function isAssociate(rank) { return String(rank).toLowerCase().trim() === 'associates'; }
+
+// 2. Perbaiki fungsi pembuat akun (Otomatis membersihkan teks saat pembuatan)
+function addCustomAccount() {
+    const user = document.getElementById('new-bisnis-user')?.value.trim() || document.getElementById('new-username')?.value.trim();
+    const pass = document.getElementById('new-bisnis-pass')?.value.trim() || document.getElementById('new-password')?.value.trim();
+    const rawRank = document.getElementById('new-bisnis-rank')?.value || document.getElementById('new-rank')?.value || 'Soldiers';
+    const rank = rawRank.trim(); // <-- Kunci perbaikan
+
+    if (!user || !pass) return;
+    const lowerUser = user.toLowerCase();
+    
+    if (typeof customAccounts === 'undefined') window.customAccounts = {};
+    if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
+
+    customAccounts[lowerUser] = { pass: pass, rank: rank };
+    savedProfiles[lowerUser] = {
+        name: user.toUpperCase(),
+        phone: '0812-' + Math.floor(1000 + Math.random() * 9000),
+        idcard: 'TON-' + Math.floor(1000 + Math.random() * 9000),
+        job: rank,
+        avatar: '',
+        groupType: 'Family'
+    };
+
+    if (typeof saveAppData === 'function') saveAppData();
+    if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+    if (typeof renderTonCatalog === 'function') renderTonCatalog();
+    if (typeof showToast === 'function') showToast("AKUN BERHASIL DIBUAT", `Akun ${user} siap dipakai!`, "success");
+
+    if (document.getElementById('new-bisnis-user')) document.getElementById('new-bisnis-user').value = '';
+    if (document.getElementById('new-bisnis-pass')) document.getElementById('new-bisnis-pass').value = '';
+    if (document.getElementById('new-username')) document.getElementById('new-username').value = '';
+    if (document.getElementById('new-password')) document.getElementById('new-password').value = '';
+}
+
+// 3. Menimpa fungsi Aksi Moderator agar fleksibel
+function addBlacklistUser() {
+  if (!isTopAdmin(getUserRank())) { showToast("ACCESS DENIED", "Hanya Moderator yang berhak membekukan akun!", "error"); return; }
+  const inputElem = document.getElementById('new-blacklist-username');
+  const targetUser = inputElem?.value.trim().toLowerCase();
+  if (!targetUser) { showToast("WARNING", "Masukkan username Discord/IC yang ingin dibekukan!", "error"); return; }
+  if (blacklistedUsers.includes(targetUser)) { showToast("DUPLIKAT", `Akun "${targetUser}" sudah ada di dalam daftar Blacklist!`, "error"); return; }
+  blacklistedUsers.push(targetUser); saveAppData();
+  if (inputElem) inputElem.value = ''; renderBlacklistTable();
+  sendDiscordWebhook(LOGS_WEBHOOK_URL, "🛡️ USER ACCOUNT FROZEN", `Moderator **${currentLoggedInUser.toUpperCase()}** telah membekukan (blacklist) akun: **${targetUser.toUpperCase()}**.`, [], 15158332);
+  showToast("USER FROZEN", `Akun [${targetUser.toUpperCase()}] berhasil dibekukan!`, "error");
+}
+
+function removeBlacklistUser(targetUser) {
+  if (!isTopAdmin(getUserRank())) { showToast("ACCESS DENIED", "Hanya Moderator yang berhak memulihkan akun!", "error"); return; }
+  showCustomConfirm("PULIHKAN AKUN", `Lepaskan status Blacklist dari akun [${targetUser.toUpperCase()}]?`, () => {
+    blacklistedUsers = blacklistedUsers.filter(u => u !== targetUser);
+    saveAppData(); renderBlacklistTable();
+    sendDiscordWebhook(LOGS_WEBHOOK_URL, "🟢 USER ACCOUNT RESTORED", `Moderator **${currentLoggedInUser.toUpperCase()}** telah memulihkan akun: **${targetUser.toUpperCase()}**.`, [], 3066993);
+    showToast("USER RESTORED", `Akun [${targetUser.toUpperCase()}] telah dipulihkan!`, "success");
+  });
+}
+
+function createNewVoucher() {
+  if (!isTopAdmin(getUserRank())) { showToast("ACCESS DENIED", "Hanya Moderator yang berhak mengelola Voucher!", "error"); return; }
+  const codeElem = document.getElementById('new-voucher-code'); const typeElem = document.getElementById('new-voucher-type'); const valElem = document.getElementById('new-voucher-val'); const allowedElem = document.getElementById('new-voucher-allowed'); const durationElem = document.getElementById('new-voucher-duration'); const descElem = document.getElementById('new-voucher-desc');
+  const code = codeElem.value.trim().toUpperCase().replace(/\s+/g, ''); const type = typeElem.value; const val = parseInt(valElem.value); const allowed = allowedElem.value; const hoursDuration = parseInt(durationElem.value) || 0; const desc = descElem.value.trim() || 'Syndicate Promo Code';
+  if (!code) { showToast("WARNING", "Kode voucher tidak boleh kosong!", "error"); return; } if (isNaN(val) || val <= 0) { showToast("WARNING", "Nilai diskon harus berupa angka lebih dari 0!", "error"); return; }
+  if (syndVouchers.some(v => v.code === code)) { showToast("DUPLIKAT", `Kode voucher ${code} sudah ada di tabel!`, "error"); return; }
+  let expiresAt = hoursDuration > 0 ? Date.now() + (hoursDuration * 60 * 60 * 1000) : null;
+  syndVouchers.push({ code, type, val, allowed, active: true, expiresAt, desc }); saveAppData();
+  codeElem.value = ''; valElem.value = ''; descElem.value = ''; durationElem.value = '0'; renderVoucherManager();
+  showToast("VOUCHER DISIMPAN", `Voucher ${code} berhasil dibuat dan langsung AKTIF!`, "success");
+}
+
+function toggleVoucherStatus(index) {
+  if (!isTopAdmin(getUserRank())) { showToast("ACCESS DENIED", "Hanya Moderator yang berhak mengelola Voucher!", "error"); return; }
+  if (syndVouchers[index]) {
+    if (syndVouchers[index].expiresAt && Date.now() > syndVouchers[index].expiresAt) { showToast("WARNING", "Voucher ini sudah kadaluarsa dan tidak bisa diaktifkan lagi!", "error"); return; }
+    syndVouchers[index].active = !syndVouchers[index].active; saveAppData(); renderVoucherManager();
+    showToast("STATUS UPDATED", `Voucher ${syndVouchers[index].code} berhasil diupdate.`, "success");
+  }
+}
+
+function deleteVoucher(index) {
+  if (!isTopAdmin(getUserRank())) { showToast("ACCESS DENIED", "Only Moderators have the authority to manage vouchers!", "error"); return; }
+  if (syndVouchers[index]) {
+    showCustomConfirm("HAPUS VOUCHER", `Permanently delete promo code ${syndVouchers[index].code} from the system?`, () => {
+      const deletedCode = syndVouchers[index].code; syndVouchers.splice(index, 1); saveAppData(); renderVoucherManager();
+      showToast("VOUCHER DIHAPUS", `Promo code ${deletedCode} has been removed.`, "error");
+    });
+  }
+}
+
+function triggerSystemReset() {
+  if (!isTopAdmin(getUserRank())) { showToast("ACCESS DENIED", "The System Reset feature is EXCLUSIVE to the Moderator rank!", "error"); return; }
+  showCustomConfirm("CONFIRMATION 1/2: SYSTEM RESET", "Warning: Transaction history, cash, and logs will be permanently deleted. (DATA ROSTER & AKUN TETAP AMAN). Are you sure?", () => {
+    setTimeout(() => { showCustomConfirm("FINAL CONFIRMATION 2/2: REPEAT WARNING", "This action cannot be undone! Are you absolutely sure?", () => {
+        localStorage.removeItem('ton_admin_transactions'); localStorage.removeItem('ton_org_leaderboard'); localStorage.removeItem('ton_metal_scrap');
+        adminTransactions = []; orgLeaderboard = []; metalScrapLogs = []; vaultBalance = 0;
+        if (typeof saveAppData === 'function') saveAppData();
+        showToast("SYSTEM RESET", "Riwayat transaksi berhasil direset! Data Roster AMAN.", "success");
+        setTimeout(() => { location.reload(); }, 1500);
+      }); }, 300);
+  });
+}
+
+function deleteCustomAccount(username) {
+    if (!isTopAdmin(getUserRank())) { showToast("AKSES DITOLAK", "Hanya Moderator yang bisa menghapus akun.", "error"); return; }
+    if (typeof showCustomConfirm === 'function') { showCustomConfirm("Hapus Akun", `Yakin hapus akun "${username}"?`, () => executeDelete(username));
+    } else if (confirm(`Yakin hapus akun "${username}"?`)) { executeDelete(username); }
+
+    function executeDelete(targetUser) {
+        const lowerTarget = targetUser.toLowerCase();
+        if (typeof customAccounts !== 'undefined' && customAccounts[lowerTarget]) delete customAccounts[lowerTarget];
+        if (typeof savedProfiles !== 'undefined') {
+            const realKey = Object.keys(savedProfiles).find(k => k.toLowerCase() === lowerTarget);
+            if (realKey) delete savedProfiles[realKey]; if (savedProfiles[targetUser]) delete savedProfiles[targetUser];
+        }
+        if (typeof saveAppData === 'function') saveAppData();
+        if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+        if (typeof renderTonCatalog === 'function') renderTonCatalog();
+        if (typeof showToast === 'function') showToast("AKUN DIHAPUS", `Akun "${targetUser}" berhasil dihapus bersih!`, "success");
+    }
+}
+
+// Menimpa pembuka gembok halaman
+function switchTab(tabId) {
+  if (blacklistedUsers.includes((currentLoggedInUser || '').toLowerCase())) {
+    logout(); showToast("ACCOUNT FROZEN", "Sesi dihentikan! Akun Anda baru saja dibekukan oleh Moderator.", "error"); triggerBlockedModal(); return;
+  }
+  const rank = getUserRank();
+  const adminOnlyTabs = ['transaction-process', 'vault-stock', 'release-outstanding', 'vault-history', 'stock-proof', 'metal-scrap'];
+  
+  if (adminOnlyTabs.includes(tabId) && !canViewAdminPanel(rank) && !isBisnisTier(rank)) {
+    showToast("ACCESS DENIED", "The Vault & TON Management area is CONFIDENTIAL!", "error"); switchTab('weapon-shop'); return;
+  }
+  if ((tabId === 'voucher-manager' || tabId === 'account-manager' || tabId === 'blacklist-manager') && !isTopAdmin(rank)) {
+    showToast("ACCESS DENIED", "This feature is EXCLUSIVE to the Moderator rank!", "error"); switchTab('weapon-shop'); return;
+  }
+  if (tabId === 'admin-dashboard' && isAssociate(rank)) {
+    showToast("ACCESS DENIED", "Rank Associates does not have permission to access the dashboard..", "error"); switchTab('weapon-shop'); return;
+  }
+
+  const allNavButtons = document.querySelectorAll('.nav-btn');
+  allNavButtons.forEach(btn => {
+    const targetTab = btn.getAttribute('data-tab'); const iconName = getLucideIconForSubmenu(targetTab);
+    btn.className = "nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition text-xs list-none";
+    let iconEl = btn.querySelector('[data-lucide]');
+    if (!iconEl) btn.insertAdjacentHTML('afterbegin', `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i>`);
+    else iconEl.setAttribute('data-lucide', iconName);
+  });
+
+  const activeBtn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
+  if (activeBtn) activeBtn.className = "nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-white font-bold bg-white/10 transition shadow-sm text-xs list-none";
+
+  document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+  const titleMap = {
+    'weapon-shop': ['Marketplace Armory', 'Order weaponry and complete the transaction live at the checkout terminal.'], 'my-orders': ['Processing Order', 'Your order process and history.'], 'admin-dashboard': ['Dashboard', 'A detailed summary of the identity, rank, and vault operations of The Old Norse.'], 'transaction-process': ['Resident Order Processing', 'Review, approve, or reject incoming orders from residents.'], 'vault-stock': ['Catalog Inventory', 'Manage inventory items and selling prices, and monitor safe stock levels.'], 'release-outstanding': ['Release Held Balance', 'Manage transactions where stock has already been deducted, pending final settlement to the vault balance.'], 'vault-history': ['Cash Flow History Archive', 'A complete history of all incoming and outgoing transactions for The Old Norse.'], 'stock-proof': ['Upload Stock Photo Proof', 'Attach a screenshot of the stock inventory to validate the database log sent to Discord.'], 'metal-scrap': ['Metal Scrap Inventory & Log', 'Official records of scrap metal intake and usage for crafting purposes.'], 'the-old-norse': ['List Roster The Old Norse', 'List of official internal and family members of The Old Norse.'], 'profile': ['IC Character Profile', 'Detailed information regarding resident identity, population registration number, and occupation.'], 'voucher-manager': ['Syndicate Voucher Manager', 'Manage, activate, and set quotas for discount promo codes for weaponry.'], 'account-manager': ['Account Login Credentials', 'Create and manage custom login username and password combinations for senior staff.'], 'blacklist-manager': ['Account Blacklist & Freeze Control', 'Manage the blacklist and freeze the accounts of residents who violate IC/OOC rules.']
+  };
+  const info = titleMap[tabId] || [tabId.toUpperCase(), 'Dynamic Vault System'];
+  document.getElementById('view-title').innerHTML = `<i data-lucide="${tabId === 'admin-dashboard' ? 'layout-dashboard' : 'box'}" class="w-5 h-5 text-amber-400 inline"></i> ` + info[0];
+  document.getElementById('view-subtitle').innerText = info[1];
+  const target = document.getElementById('tab-' + tabId);
+  if (target) target.classList.remove('hidden');
+  
+  const floatCartBtn = document.getElementById('floating-cart-btn');
+  if (floatCartBtn) floatCartBtn.style.display = tabId === 'weapon-shop' ? 'flex' : 'none';
+
+  if (tabId === 'weapon-shop') renderMarketplace(currentMarketplaceFilter);
+  if (tabId === 'profile') renderProfilePage();
+  if (tabId === 'the-old-norse') renderTonCatalog();
+  if (tabId === 'account-manager') renderCustomAccountsTable();
+  if (tabId === 'blacklist-manager') renderBlacklistTable();
+  if (tabId === 'transaction-process') renderTxProcessTable(true);
+  if (tabId === 'vault-stock') renderVaultInventory();
+  if (tabId === 'release-outstanding') renderReleaseOutstanding();
+  if (tabId === 'vault-history') renderVaultHistory(true);
+  if (tabId === 'voucher-manager') renderVoucherManager();
+  if (tabId === 'stock-proof') {
+    renderStockProofHistory();
+    if (document.getElementById('proof-date-auto')) document.getElementById('proof-date-auto').value = new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+    if (document.getElementById('proof-member-name')) document.getElementById('proof-member-name').value = (currentLoggedInUser || 'ADMIN').toUpperCase();
+  }
+  if (tabId === 'metal-scrap') renderMetalScrapLogs();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
