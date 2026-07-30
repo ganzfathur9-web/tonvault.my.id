@@ -78,7 +78,7 @@ let currentUserRole = '';
 let userCart = [];
 let globalOrders = [];
 
-let currentCatalogTab = 'Family';
+let currentCatalogTab = 'all';
 let activeInventoryFilter = 'all';
 let currentMarketplaceFilter = 'all';
 let appliedDiscount = 0;
@@ -3078,46 +3078,81 @@ function filterSidebarMenu(query) {
   });
 }
 
+// ============================================================================
+// 🪄 FITUR PENGAMAT LIVE (AUTO-KICK & AUTO-RANK) TANPA REFRESH
+// ============================================================================
 function checkAndApplyRankChanges() {
     if (!currentLoggedInUser) return; 
 
-    let latestRank = currentUserRole;
-    const lowerUser = currentLoggedInUser.toLowerCase(); // Kunci utamanya di sini!
+    const lowerUser = currentLoggedInUser.toLowerCase();
 
-    // 1. Cek di Database Roster
-    if (typeof savedProfiles !== 'undefined' && savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
-        latestRank = savedProfiles[lowerUser].job;
-    } 
-    // 2. Jika tidak ada, cek di Akun Custom
-    else if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser]) {
-        latestRank = customAccounts[lowerUser].rank;
+    // 🚨 1. CEK LIVE: APAKAH AKUN DIBEKUKAN (BLACKLIST)?
+    if (typeof blacklistedUsers !== 'undefined' && blacklistedUsers.includes(lowerUser)) {
+        executeForceKick("ACCOUNT FROZEN", "Sesi dihentikan seketika! Akun Anda baru saja dibekukan oleh Moderator.");
+        return;
     }
 
-    // 3. Jika Sistem Mendeteksi Pangkat Berubah
+    // 🚨 2. CEK LIVE: APAKAH AKUN DIHAPUS (DELETED) DARI ROSTER?
+    // Lindungi akun Master & Manual agar admin tidak ikut tertendang jika terjadi error jaringan
+    let perlindunganMaster = ['admin', 'moderator', 'don', 'underboss', 'bisnis', 'associates', 'xxx', 'xyroo'];
+    if (typeof AKUN_MANUAL !== 'undefined') {
+        perlindunganMaster = perlindunganMaster.concat(Object.keys(AKUN_MANUAL).map(u => u.toLowerCase()));
+    }
+    
+    const isMaster = perlindunganMaster.includes(lowerUser);
+    const inProfile = typeof savedProfiles !== 'undefined' && savedProfiles[lowerUser];
+    const inCustom = typeof customAccounts !== 'undefined' && customAccounts[lowerUser];
+
+    if (!isMaster && !inProfile && !inCustom) {
+        executeForceKick("ACCOUNT DELETED", "Sesi dihentikan! Akun Anda baru saja dihapus permanen oleh Administrator.");
+        return;
+    }
+
+    // 🪄 3. CEK LIVE: PERUBAHAN PANGKAT / ROLE
+    let latestRank = currentUserRole;
+    if (inProfile && inProfile.job) {
+        latestRank = inProfile.job;
+    } else if (inCustom && inCustom.rank) {
+        latestRank = inCustom.rank;
+    }
+
     if (latestRank !== currentUserRole) {
         currentUserRole = latestRank; 
         
-        // Simpan sesi baru ke laptop pengguna
         localStorage.setItem('ton_current_session', JSON.stringify({ role: currentUserRole, name: currentLoggedInUser }));
-
-        // Ganti tulisan pangkat di pojok kiri bawah
         const roleElem = document.getElementById('user-role-text');
         if (roleElem) roleElem.innerText = currentUserRole.toUpperCase();
 
-        // Buka / Tutup gembok menu sesuai pangkat baru
         if (typeof updateRBACUI === 'function') updateRBACUI();
 
-        // Jika pangkat diturunkan saat sedang buka Admin Panel, tendang kembali ke Shop
         if (typeof canViewAdminPanel === 'function' && !canViewAdminPanel(currentUserRole)) {
             if (typeof switchTab === 'function') switchTab('weapon-shop');
         }
-
-        // Segarkan halaman profil IC-nya
-        if (typeof renderProfilePage === 'function') renderProfilePage();
-
-        // Munculkan notifikasi sukses!
-        if (typeof showToast === 'function') showToast("RANK UPDATED", `Sistem mendeteksi perubahan: Pangkat Anda kini menjadi ${currentUserRole.toUpperCase()}`, "success");
+        if (typeof showToast === 'function') showToast("RANK UPDATED", `Sistem mendeteksi perubahan: Pangkat Anda dinaikkan menjadi ${currentUserRole.toUpperCase()}`, "success");
     }
+}
+
+// 🥾 FUNGSI BARU: TENDANGAN KELUAR SEKETIKA (LIVE AUTO-KICK)
+function executeForceKick(title, message) {
+    // 1. Hapus memori sesi login di laptop si target
+    localStorage.removeItem('ton_current_session');
+    currentLoggedInUser = '';
+    currentUserRole = '';
+
+    // 2. Paksa tutup semua modal atau laci yang sedang mereka buka
+    document.querySelectorAll('[id$="-modal"]').forEach(m => m.classList.add('hidden'));
+    const cartDrawer = document.getElementById('cart-drawer-backdrop');
+    if (cartDrawer) cartDrawer.classList.add('hidden');
+
+    // 3. Sembunyikan aplikasi utama, kembalikan mereka ke gerbang login
+    const mainApp = document.getElementById('main-app');
+    const authGate = document.getElementById('auth-gate');
+    if (mainApp) mainApp.classList.add('hidden');
+    if (authGate) authGate.classList.remove('hidden');
+
+    // 4. Munculkan peringatan merah dan kunci layar mereka
+    if (typeof showToast === 'function') showToast(title, message, "error");
+    if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
 }
 
 function renderVoucherManager() {
