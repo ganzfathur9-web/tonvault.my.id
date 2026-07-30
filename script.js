@@ -3876,20 +3876,22 @@ function switchTab(tabId) {
 
 
 // ============================================================================
-// 🛡️ REVISI HAK AKSES FINAL: READ-ONLY UNTUK UNDERBOSS, DON & PETINGGI LAIN
+// 🛡️ REVISI HAK AKSES: DON KEMBALI MENDAPATKAN HAK EDIT HARGA & STOK
 // ============================================================================
 
 // 1. Moderator adalah pemegang kekuasaan tertinggi mutlak
 function isTopAdmin(rank) { return ['moderator'].includes(String(rank).toLowerCase().trim()); }
 
-// 2. Don Tier (Hanya untuk akses ubah Roster & tombol Lockdown darurat)
+// 2. Don Tier (Akses ubah Roster & Lockdown)
 function isDonTier(rank) { return ['moderator', 'don', 'underboss'].includes(String(rank).toLowerCase().trim()); }
 
-// 🚨 3. KUNCI UTAMA: Hak Tulis / Edit / Approve HANYA untuk Moderator & Bisnis
-function isBisnisTier(rank) { return ['moderator', 'bisnis'].includes(String(rank).toLowerCase().trim()); }
+// 🚨 3. KUNCI UTAMA: Hak Tulis / Edit / Approve HANYA untuk Moderator, DON, & Bisnis
+// (Don dimasukkan kembali ke sini agar bisa mengedit harga)
+function isBisnisTier(rank) { return ['moderator', 'don', 'bisnis'].includes(String(rank).toLowerCase().trim()); }
 
-// 🚨 4. KUNCI KEDUA: Don, Underboss, Consigliere, Captain, Capo dipindah ke kelompok Read-Only (Penonton)
-function isReadOnlyAdminTier(rank) { return ['don', 'underboss', 'consigliere', 'captain', 'capo'].includes(String(rank).toLowerCase().trim()); }
+// 🚨 4. KUNCI KEDUA: Underboss, Consigliere, Captain, Capo TETAP di kelompok Read-Only (Penonton)
+// (Don sudah dikeluarkan dari sini)
+function isReadOnlyAdminTier(rank) { return ['underboss', 'consigliere', 'captain', 'capo'].includes(String(rank).toLowerCase().trim()); }
 
 function canViewAdminPanel(rank) { return isBisnisTier(rank) || isReadOnlyAdminTier(rank); }
 function isAssociate(rank) { return String(rank).toLowerCase().trim() === 'associates'; }
@@ -3957,4 +3959,45 @@ function renderVaultInventory() {
       `;
     }); lucide.createIcons();
   } catch (err) {}
+}
+
+
+
+// ============================================================================
+// 🛡️ KUNCI MUTLAK LOCKDOWN: HANYA MODERATOR YANG BISA MENGKLIK
+// ============================================================================
+
+// 1. Robot Penyembunyi Tombol (Menghilangkan tombol dari layar Don/Underboss)
+setInterval(() => {
+    document.querySelectorAll('button').forEach(btn => {
+        const onclickStr = btn.getAttribute('onclick') || '';
+        // Cari tombol yang memiliki fungsi lockdown
+        if (onclickStr.toLowerCase().includes('lockdown')) {
+            if (!isTopAdmin(getUserRank())) {
+                btn.style.display = 'none'; // Sembunyikan jika bukan Moderator
+            } else {
+                btn.style.display = ''; // Munculkan jika Moderator
+            }
+        }
+    });
+}, 1000);
+
+// 2. Sistem Pencegat (Mencegah paksaan klik dari Inspect Element / Console)
+const fungsiLockdownAsli = window.toggleVaultLockdown || window.toggleLockdown;
+
+if (typeof fungsiLockdownAsli === 'function') {
+    const pengamanLockdown = function() {
+        if (!isTopAdmin(getUserRank())) {
+            if (typeof showToast === 'function') {
+                showToast("ACCESS DENIED", "Otoritas ditolak! Hanya Moderator yang diizinkan mengaktifkan Lockdown.", "error");
+            }
+            return; // Tendang! Jangan izinkan sistem terkunci
+        }
+        // Jika yang klik benar-benar Moderator, lanjutkan fungsi aslinya
+        fungsiLockdownAsli.apply(this, arguments);
+    };
+
+    // Timpa fungsi asli di sistem dengan fungsi yang sudah diamankan
+    if (window.toggleVaultLockdown) window.toggleVaultLockdown = pengamanLockdown;
+    if (window.toggleLockdown) window.toggleLockdown = pengamanLockdown;
 }
