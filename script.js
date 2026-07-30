@@ -20,29 +20,21 @@ try {
   console.warn("⚠️ FIREBASE ERROR: Menggunakan penyimpanan lokal.");
 }
 
-
 const LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1530339697950457896/tJ0pI8L0aA1_eGQalIYceUoQ1OLNgik_60Dbk22JB2w0DtsT2hdeL4Z5bmZcnfbHfL0c";
 const ORDERS_WEBHOOK_URL = "https://discord.com/api/webhooks/1530340024275701870/pjcRbUAF5Gfx6VCHLvwaQgap01G5Skwye7QHRkpEemSrtVNsXxvq9Rr8HN_3mGwvpRXU";
 const PROFILE_WEBHOOK_URL = "https://discord.com/api/webhooks/1530379645566849167/5k91siHoYLf_ab232QC-AeJnG2SCj_qeQEqhUhYPpHZLQPneW8sTUm0RxSt8H0th5VU7";
 const VAULT_LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1530401014107209759/_2eW1uFqlstPcpwjm0fU4-blOEP8taAa9x-uwVqSsI0V0CRSxwgQMpS_LXAWuRAJ6cD8";
 const METAL_SCRAP_WEBHOOK_URL = "https://discord.com/api/webhooks/1530480654796587031/XYR5Tza9v0Fii60UYD7WdFN8Futv1emOXC2iowkH1dGo1QwTnJAtuaiLDAarWKe5DUAs";
 
-
-
 // =====================================================================
 // 🚨 OPSI DARURAT: DAFTAR AKUN MANUAL ANTI-GAGAL 🚨
 // =====================================================================
-// Tulis semua akun member yang ingin bisa login di bawah ini:
 const AKUN_MANUAL = {
     "qaz": { pass: "123", rank: "Soldiers", divisi: "Family" },
     "budi": { pass: "budi123", rank: "Bisnis", divisi: "Family" },
-  "rexy": { pass: "rexy11", rank: "Bisnis", divisi: "Internal" },
+    "rexy": { pass: "rexy11", rank: "Bisnis", divisi: "Internal" },
     "joko": { pass: "joko123", rank: "Associates", divisi: "Family" },
     "memberbaru": { pass: "rahasia", rank: "Soldiers", divisi: "Family" }
-    
-    // CARA MENAMBAH AKUN:
-    // "username": { pass: "password", rank: "pangkat", divisi: "divisi" },
-    // Jangan lupa koma ( , ) di akhir baris jika ingin menambah lagi di bawahnya!
 };
 
 // ---------------------------------------------------------------------
@@ -56,12 +48,10 @@ setInterval(() => {
     for (let user in AKUN_MANUAL) {
         let data = AKUN_MANUAL[user];
         
-        // 1. Suntik ke laci Login
         if (!window.customAccounts[user]) {
             window.customAccounts[user] = { pass: data.pass, rank: data.rank };
         }
         
-        // 2. Suntik ke laci Roster agar muncul di tabel
         if (!window.savedProfiles[user]) {
             window.savedProfiles[user] = {
                 name: user.toUpperCase(),
@@ -71,24 +61,14 @@ setInterval(() => {
                 avatar: '',
                 groupType: data.divisi
             };
-            perluRenderUlang = true; // Tandai ada data baru untuk dirender
+            perluRenderUlang = true;
         }
     }
 
-    // Paksa update tampilan jika ada data yang baru disuntik
     if (perluRenderUlang) {
         if (typeof renderTonCatalog === 'function') renderTonCatalog();
     }
-}, 1000); // Sistem akan menyuntikkan data ini setiap 1 detik
-// =====================================================================
-
-
-
-
-
-
-
-
+}, 1000); 
 
 // ==========================================
 // 🛡️ KONFIGURASI KEAMANAN DISCORD OAUTH2
@@ -140,7 +120,7 @@ let defaultCustomAccounts = {
   "nayi12345": { pass: "nayi12345", rank: "Associates" },
   "nay": { pass: "nay", rank: "Soldiers" },
 };
-// Ganti baris 54 dengan kode ini agar akun dari VS Code selalu terbaca:
+
 let savedAccounts = getSafeStorage('ton_custom_accounts') || {};
 let customAccounts = { ...savedAccounts, ...defaultCustomAccounts };
 
@@ -160,10 +140,6 @@ let defaultInventory = [
   { name: "Assault Rifle", cat: "weapon", badge: "NORMAL", desc: "Senjata serbu standar untuk pertempuran skala besar.", price: 170000, base: 150000, stock: 3, img: "https://i.imgur.com/D5k6n0x.png", restricted: true },
   { name: "Carbine Rifle", cat: "weapon", badge: "COMING SOON", desc: "Senjata serbu laras sedang dengan akurasi jarak jauh yang sangat stabil.", price: 0, base: 0, stock: 0, img: "https://i.imgur.com/jMAOs0V.png", restricted: true },
   { name: "Pump Shotgun", cat: "weapon", badge: "NORMAL", desc: "Senjata laras panjang penetrasi tinggi untuk jarak dekat.", price: 71000, base: 60000, stock: 4, img: "https://i.imgur.com/1ypltGL.png", restricted: true },
-
-  // ==========================================
-  // 🎒 AMMUNITION (PELURU)
-  // ==========================================
   { name: "Ammo 0.50", cat: "ammo", badge: "NORMAL", desc: "Peluru kaliber .50 untuk pistol berat.", price: 1500, base: 1000, stock: 50, img: "https://i.imgur.com/Y9ARS48.png", restricted: false },
   { name: "Ammo 380", cat: "ammo", badge: "NORMAL", desc: "Peluru standar kaliber .380.", price: 2000, base: 1400, stock: 50, img: "https://i.imgur.com/Y9ARS48.png", restricted: false },
   { name: "Ammo 44 Navy", cat: "ammo", badge: "NORMAL", desc: "Peluru khusus untuk Navy Revolver.", price: 5800, base: 4500, stock: 30, img: "https://i.imgur.com/Y9ARS48.png", restricted: false },
@@ -172,16 +148,8 @@ let defaultInventory = [
   { name: "Ammo Shotgun", cat: "ammo", badge: "NORMAL", desc: "Selongsong peluru sebar (shells) untuk Shotgun.", price: 5500, base: 4000, stock: 30, img: "https://i.imgur.com/Y9ARS48.png", restricted: false },
   { name: "Ammo Virtus/Carbine (5.56mm)", cat: "ammo", badge: "COMING SOON", desc: "Peluru senapan serbu kaliber 5.56mm.", price: 0, base: 0, stock: 0, img: "https://i.imgur.com/Y9ARS48.png", restricted: false },
   { name: "Ammo Assault Riffle (7.76mm)", cat: "ammo", badge: "NORMAL", desc: "Peluru senapan serbu kaliber berat 7.62/7.76mm.", price: 7000, base: 5500, stock: 25, img: "https://i.imgur.com/Y9ARS48.png", restricted: false },
-
-  // ==========================================
-  // 🦺 VEST (ARMOR / PELINDUNG BODY)
-  // ==========================================
   { name: "Vest Merah 50%", cat: "vest", badge: "NORMAL", desc: "Rompi anti-peluru ringan dengan ketahanan armor 50%.", price: 2000, base: 1500, stock: 20, img: "https://i.imgur.com/fn4cyuc.png", restricted: false },
   { name: "Vest Biru 90%", cat: "vest", badge: "NORMAL", desc: "Rompi anti-peluru berat dengan ketahanan armor maksimal 90%.", price: 5000, base: 3800, stock: 15, img: "https://i.imgur.com/QB3dTtQ.png", restricted: false },
-
-  // ==========================================
-  // 💊 DRUGS (PRODUK JADI & BAHAN MENTAH)
-  // ==========================================
   { name: "Weed Bag", cat: "durgs", badge: "NORMAL", desc: "Paket kanabis siap edar dalam kantong klip.", price: 400, base: 250, stock: 100, img: "https://i.imgur.com/pTSqAeZ.png", restricted: false },
   { name: "Meth Bag", cat: "durgs", badge: "NORMAL", desc: "Paket metamfetamin kristal kemasan klip.", price: 700, base: 450, stock: 80, img: "https://i.imgur.com/YOFVaFI.png", restricted: false },
   { name: "Cocaine Bag", cat: "durgs", badge: "NORMAL", desc: "Paket bubuk kokain murni kualitas tinggi.", price: 3000, base: 2200, stock: 50, img: "https://i.imgur.com/bexkxma.png", restricted: false },
@@ -190,10 +158,6 @@ let defaultInventory = [
   { name: "Seed", cat: "durgs", badge: "NORMAL", desc: "Benih tanaman kualitas unggul siap tanam.", price: 900, base: 600, stock: 100, img: "https://i.imgur.com/cVQsd8E.png", restricted: false },
   { name: "Morphine", cat: "durgs", badge: "NORMAL", desc: "Cairan morfin medis penahan rasa sakit tingkat tinggi.", price: 1375, base: 1000, stock: 40, img: "https://i.imgur.com/oxYJEAA.png", restricted: false },
   { name: "Meth Set", cat: "durgs", badge: "NORMAL", desc: "Satu set perlengkapan bahan kimia untuk produksi Meth.", price: 1500, base: 1100, stock: 30, img: "https://i.imgur.com/TOkCerX.png", restricted: false },
-
-  // ==========================================
-  // 🔦 ATTACHMENTS (MODIFIKASI SENJATA)
-  // ==========================================
   { name: "Tactical Flashlight", cat: "attachments", badge: "NORMAL", desc: "Senter taktis yang dipasang pada rail senjata untuk penerangan gelap.", price: 4500, base: 3500, stock: 15, img: "https://i.imgur.com/vBf8f4S.png", restricted: false },
   { name: "Extended Pistol Clip (ALL PISTOL)", cat: "attachments", badge: "NORMAL", desc: "Magasin tambahan kapasitas ekstra untuk semua jenis pistol.", price: 4500, base: 3500, stock: 15, img: "https://i.imgur.com/LTH8KGK.png", restricted: false },
   { name: "Grip ( SMG, Rifle )", cat: "attachments", badge: "NORMAL", desc: "pegangan bawah (foregrip) untuk mengurangi recoil SMG dan Rifle.", price: 4500, base: 3500, stock: 15, img: "https://i.imgur.com/Jne4ROG.png", restricted: false },
@@ -205,10 +169,6 @@ let defaultInventory = [
   { name: "SMG Drum ( SMG Only ! )", cat: "attachments", badge: "NORMAL", desc: "Magasin drum berkapasitas sangat besar khusus SMG standar.", price: 15000, base: 12000, stock: 8, img: "https://i.imgur.com/rGvvlm4.png", restricted: true },
   { name: "Extended Rifle Clip", cat: "attachments", badge: "NORMAL", desc: "Magasin panjang dengan jumlah peluru ekstra untuk Assault Rifle.", price: 22500, base: 18000, stock: 10, img: "https://i.imgur.com/DWpm83s.png", restricted: true },
   { name: "Rifle Drum", cat: "attachments", badge: "NORMAL", desc: "Magasin drum kapasitas maksimal untuk penembakan serbu berkelanjutan.", price: 30000, base: 24000, stock: 5, img: "https://i.imgur.com/Jheijpv.png", restricted: true },
-
-  // ==========================================
-  // 🛠️ TOOLS HEIST (PERALATAN PERAMPOKAN & TEKNIS)
-  // ==========================================
   { name: "Lockpick", cat: "tool-heist", badge: "NORMAL", desc: "Alat pembuka kunci pintu atau kendaraan secara paksa.", price: 3500, base: 2500, stock: 30, img: "https://i.imgur.com/c6ojdKu.png", restricted: false },
   { name: "Tablet", cat: "tool-heist", badge: "NORMAL", desc: "Perangkat elektronik portabel untuk meretas jaringan keamanan.", price: 4500, base: 3500, stock: 20, img: "https://i.imgur.com/f0YkRoN.png", restricted: false },
   { name: "Oxygen Tank", cat: "tool-heist", badge: "NORMAL", desc: "Tabung oksigen menyelam untuk melarikan diri atau infiltrasi bawah air.", price: 7000, base: 5500, stock: 15, img: "https://i.imgur.com/ECzHxF4.png", restricted: false },
@@ -228,7 +188,6 @@ let defaultInventory = [
 let _savedInv = getSafeStorage('ton_vault_inventory');
 let vaultInventory = (_savedInv && Array.isArray(_savedInv) && _savedInv.length > 0) ? _savedInv : defaultInventory;
 
-// DATA VOUCHER PERSISTEN
 let defaultVouchers = [
   { code: 'TON2026', type: 'percent', val: 15, allowed: 'don_tier', active: false, expiresAt: null, desc: 'Diskon Spesial 15% untuk Petinggi TON' },
   { code: 'OLDNORSE', type: 'nominal', val: 50000, allowed: 'don_tier', active: false, expiresAt: null, desc: 'Potongan Tunai $50,000 Petinggi' }
@@ -246,6 +205,9 @@ function getSafeStorage(key) {
   }
 }
 
+// ==========================================
+// 🔥 PERBAIKAN KRUSIAL: FUNGSI SAVE YANG BENAR
+// ==========================================
 function saveAppData() {
   const allData = {
     adminTransactions: typeof adminTransactions !== 'undefined' ? adminTransactions : [],
@@ -267,24 +229,15 @@ function saveAppData() {
 
   try {
     localStorage.setItem('ton_global_state', JSON.stringify(allData));
-  } catch (e) {}
-}
-
-  // 2. Simpan cadangan ke Memori Lokal (Fallback)
-  try {
-    localStorage.setItem('ton_global_state', JSON.stringify(allData));
-    // Simpan juga eceran untuk berjaga-jaga jika kode asli Anda membutuhkannya
     localStorage.setItem('ton_admin_transactions', JSON.stringify(allData.adminTransactions));
     localStorage.setItem('ton_vault_inventory', JSON.stringify(allData.vaultInventory));
     localStorage.setItem('ton_all_profiles', JSON.stringify(allData.savedProfiles));
   } catch (e) {
     console.warn("Memori lokal browser penuh atau terblokir.");
   }
+}
 
-// ============================================================================
-// ☁️ ENGINE SINKRONISASI FIREBASE REAL-TIME (ANTI-OVERWRITE)
-// ============================================================================
-let isFirebaseSynced = false; // GEMBOK PELINDUNG
+let isFirebaseSynced = false; 
 
 function initCloudRealtimeSync() {
   if (!db) {
@@ -299,7 +252,7 @@ function initCloudRealtimeSync() {
     if (data) {
       applyGlobalState(data);
     }
-    isFirebaseSynced = true; // KUNCI DIBUKA: Menandakan data awan sudah sukses ditarik!
+    isFirebaseSynced = true;
     if (typeof refreshAllUIDisplays === 'function') refreshAllUIDisplays();
   });
 }
@@ -351,16 +304,11 @@ function applyGlobalState(data) {
 
     if (typeof checkAndApplyRankChanges === 'function') checkAndApplyRankChanges();
 
-    // ========================================================================
-    // 🔥 PERBAIKAN KRUSIAL: PAKSA RE-RENDER SEMUA UI SAAT DATA BERUBAH 🔥
-    // ========================================================================
     if (typeof refreshAllUIDisplays === 'function') {
         refreshAllUIDisplays();
     } else {
-        // Jika fungsi refreshAllUIDisplays tidak ada, render satu per satu secara eksplisit
         if (typeof renderTonCatalog === 'function') renderTonCatalog();
         if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
-        // Tambahkan render lain yang diperlukan (misal: render balance, dsb.)
     }
 }
 
@@ -381,9 +329,6 @@ function refreshAllUIDisplays() {
   if (typeof renderProfilePage === 'function') renderProfilePage();
 }
 
-// ==========================================
-// ⚡ TOAST NOTIFICATION ENGINE
-// ==========================================
 function showToast(title, message, type = 'success') {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -418,9 +363,6 @@ function showToast(title, message, type = 'success') {
   }, 3000);
 }
 
-// ==========================================
-// 🚨 CUSTOM CONFIRM MODAL ENGINE
-// ==========================================
 let confirmCallback = null;
 function showCustomConfirm(title, message, onYes) {
   const backdrop = document.getElementById('custom-confirm-backdrop');
@@ -460,9 +402,6 @@ function closeCustomConfirm() {
   }
 }
 
-// ==========================================
-// 👑 RBAC HIERARCHY HELPER
-// ==========================================
 function getUserRank() {
   const savedProfiles = getSafeStorage('ton_all_profiles') || {};
   const prof = savedProfiles[currentLoggedInUser] || {};
@@ -511,7 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof lucide !== 'undefined') lucide.createIcons();
   checkDiscordOAuthResponse();
 
-  // TAMBAHKAN BARIS INI:
   initCloudRealtimeSync();
 
   const discordLoginBtn = document.getElementById('discord-login-btn');
@@ -558,9 +496,6 @@ function toggleSidebar() {
   }
 }
 
-// ==========================================
-// WEBHOOK DISCORD DENGAN DUKUNGAN MULTIPART FILE
-// ==========================================
 function sendDiscordWebhook(targetUrl, title, description, fields = [], color = 15158332, thumbnailUrl = null, rawFiles = []) {
   const embedData = {
     title: "🛡️ TON SYSTEM | " + title,
@@ -661,6 +596,9 @@ async function verifyUserDiscordAccount(tokenType, accessToken) {
   }
 }
 
+// ============================================================================
+// 🔥 PERBAIKAN KRUSIAL: LOGIKA LOGIN ANTI-GAGAL
+// ============================================================================
 function handleAuthLogin(e) {
     if (e) e.preventDefault();
 
@@ -674,36 +612,26 @@ function handleAuthLogin(e) {
 
     const lowerUser = user.toLowerCase();
 
-// ===============================================================
-    // 🛡️ JALUR DARURAT SIANG INI (FIREBASE TIDAK BISA MENGHAPUS INI)
-    // ===============================================================
-    const akunDarurat = {
-        "qaz": { pass: "123", rank: "Soldiers" },
-        "budi": { pass: "budi123", rank: "Bisnis" },
-        "member1": { pass: "rahasia", rank: "Associates" }
-        // Silakan tambah akun lain di sini dengan format yang sama
-    };
-
-    if (akunDarurat[lowerUser] && akunDarurat[lowerUser].pass === pass) {
-        if (typeof initSession === 'function') initSession(akunDarurat[lowerUser].rank, user, true);
+    // 1. JALUR DARURAT LANGSUNG DARI AKUN_MANUAL
+    if (typeof AKUN_MANUAL !== 'undefined' && AKUN_MANUAL[lowerUser] && AKUN_MANUAL[lowerUser].pass === pass) {
+        if (typeof initSession === 'function') initSession(AKUN_MANUAL[lowerUser].rank, user, true);
         return;
     }
-
   
     let finalRank = 'Soldiers';
     let isAllowed = false;
 
-    // 1. JALUR MASTER KEY
+    // 2. JALUR MASTER KEY
     if (pass === 'ton12345') {
         isAllowed = true;
         finalRank = 'Moderator';
     }
-    // 2. CEK AKUN YANG DIBUAT DARI ACCOUNT MANAGE (Hasil sedotan Radar Firebase)
+    // 3. CEK AKUN DARI CUSTOM ACCOUNTS
     else if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser] && customAccounts[lowerUser].pass === pass) {
         isAllowed = true;
         finalRank = customAccounts[lowerUser].rank || 'Soldiers';
     }
-    // 3. CEK AKUN BAWAAN SISTEM
+    // 4. CEK AKUN BAWAAN
     else if (pass === 'admin123' || pass === 'xxx123') {
         isAllowed = true;
         if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
@@ -714,27 +642,21 @@ function handleAuthLogin(e) {
         else if (lowerUser === 'associates') finalRank = 'Associates';
     }
 
-    // JIKA BERHASIL MASUK
     if (isAllowed) {
-        // Sinkronkan dengan pangkat terbaru di Roster
         if (typeof savedProfiles !== 'undefined' && savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
             finalRank = savedProfiles[lowerUser].job;
         }
-        
         if (typeof initSession === 'function') initSession(finalRank, user, true);
         return;
     }
 
-    // JIKA GAGAL MASUK
     if (typeof triggerBlockedModal === 'function') triggerBlockedModal();
     else alert("Login Gagal! Akun tidak ditemukan.");
 }
+
 function triggerBlockedModal() { document.getElementById('blocked-modal')?.classList.remove('hidden'); }
 function closeBlockedModal() { document.getElementById('blocked-modal')?.classList.add('hidden'); }
 
-// ==========================================
-// 🔐 INIT SESSION & SWITCH TAB
-// ==========================================
 function initSession(role, name, sendLog = true) {
   if (blacklistedUsers.includes((name || '').toLowerCase())) {
     showToast("ACCOUNT FROZEN", "Akun Anda telah dibekukan (Blacklist)! Anda tidak diizinkan mengakses sistem.", "error");
@@ -901,486 +823,6 @@ function switchTab(tabId) {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// ============================================================================
-// 🛒 OPTIMIZED MARKETPLACE RENDERER (WITH COMING SOON FEATURE)
-// ============================================================================
-function renderMarketplace(category = 'all') {
-  const grid = document.getElementById('product-grid');
-  if (!grid) return;
-
-  const filtered = vaultInventory.filter(item => {
-    if (category === 'all') return true;
-    if (category === 'weapon') return item.cat === 'weapon';
-    if (category === 'ammo') return item.cat === 'ammo';
-    if (category === 'vest') return item.cat === 'vest';
-    if (category === 'durgs') return item.cat === 'durgs' || item.cat === 'PACKAGE';
-    if (category === 'attachments') return item.cat === 'attachments' || item.cat.includes('ATTACH');
-    if (category === 'tool-heist') return item.cat === 'tool-heist';
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    grid.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 italic"><i data-lucide="package-open" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>Belum ada barang di kategori ini.</div>`;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    return;
-  }
-
-  const htmlBuilder = filtered.map(item => {
-    const originalIdx = vaultInventory.indexOf(item);
-    const isComingSoon = item.badge === 'COMING SOON' || item.badge === 'COMING_SOON';
-    const isOOS = (item.stock <= 0) && !isComingSoon;
-    
-    let cardBorder = 'border-[#1e2230] hover:border-red-500/50 bg-[#0e1017] shadow-sm';
-    if (isComingSoon) {
-      cardBorder = 'border-emerald-500/60 bg-[#0e1017] shadow-[0_0_15px_rgba(16,185,129,0.15)]';
-    } else if (isOOS) {
-      cardBorder = 'border-red-900/60 opacity-60 bg-red-950/10';
-    }
-
-    const imgStyle = isOOS ? 'grayscale opacity-40' : (isComingSoon ? 'opacity-80 group-hover:scale-105 transition duration-300' : 'group-hover:scale-105 transition duration-300 drop-shadow-md');
-
-    let badgeText = (item.cat || 'ITEM').toUpperCase();
-    let badgeStyle = 'bg-[#131622] border-[#1e2230] text-zinc-400';
-    if (isComingSoon) {
-      badgeText = 'COMING SOON';
-      badgeStyle = 'bg-pink-500/10 border-pink-500/30 text-pink-500 font-bold';
-    } else if (isOOS) {
-      badgeText = 'OUT OF STOCK';
-      badgeStyle = 'bg-red-500/10 border-red-500/20 text-red-500';
-    }
-
-    let priceHtml = `<span class="text-emerald-400 font-bold text-sm">$${(item.price || 0).toLocaleString()}</span>`;
-    if (isComingSoon) {
-      priceHtml = `<span class="text-zinc-600 font-bold tracking-widest text-sm uppercase">LOCKED</span>`;
-    }
-
-    let actionButtonHtml = '';
-    if (isComingSoon) {
-      actionButtonHtml = `
-        <div class="w-full pt-1">
-          <button disabled class="w-full bg-[#131622] border border-[#1e2230] text-zinc-600 font-bold py-2 rounded-xl text-xs uppercase tracking-wider cursor-not-allowed text-center transition">UNAVAILABLE</button>
-        </div>
-      `;
-    } else if (isOOS) {
-      actionButtonHtml = `
-        <span class="text-[10px] font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-lg">STOK KOSONG</span>
-        <button disabled class="bg-[#131622] text-zinc-600 font-bold px-3 py-1.5 rounded-xl text-xs cursor-not-allowed">KOSONG</button>
-      `;
-    } else {
-      actionButtonHtml = `
-        <span class="text-[10px] text-zinc-400 flex items-center gap-1.5 font-medium"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Ready (${item.stock})</span>
-        <button onclick="addToCartSimple(${originalIdx})" class="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-1.5 rounded-xl text-xs transition shadow-md shadow-red-600/20 flex items-center gap-1.5 ml-auto">
-          <i data-lucide="shopping-cart" class="w-3.5 h-3.5 inline"></i> Buy
-        </button>
-      `;
-    }
-
-    return `
-      <div class="product-card border rounded-2xl p-4 flex flex-col justify-between group transition duration-200 ${cardBorder}">
-        <div>
-          <div class="h-44 bg-[#131622] rounded-xl border border-[#1e2230] flex items-center justify-center overflow-hidden mb-3 p-3 relative">
-            <img src="${item.img}" alt="${item.name}" class="h-full object-contain ${imgStyle}" loading="lazy">
-            <span class="absolute top-2.5 right-2.5 px-2 py-0.5 border rounded-lg text-[9px] font-bold uppercase backdrop-blur-sm ${badgeStyle}">${badgeText}</span>
-          </div>
-
-          <div class="flex justify-between items-start mb-1">
-            <h3 class="text-base font-bold text-white ${isOOS || isComingSoon ? '' : 'group-hover:text-red-400'} transition tracking-wide">${item.name}</h3>
-            ${priceHtml}
-          </div>
-          <p class="text-[11px] text-zinc-400 line-clamp-2 min-h-[32px]">${item.desc || ''}</p>
-        </div>
-
-        <div class="pt-3 border-t border-[#1e2230] mt-4 flex items-center justify-between gap-2">
-          ${actionButtonHtml}
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  grid.innerHTML = htmlBuilder;
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function filterProducts(category) {
-  currentMarketplaceFilter = category;
-  document.querySelectorAll('.cat-btn').forEach(btn => btn.className = 'cat-btn bg-[#0e1017] text-zinc-400 hover:text-white font-semibold px-4 py-2 border border-[#1e2230] rounded-xl transition text-xs');
-  if (event && event.currentTarget) event.currentTarget.className = 'cat-btn bg-red-600 text-white font-semibold px-4 py-2 rounded-xl transition shadow-sm text-xs';
-  renderMarketplace(category);
-}
-
-function addToCartSimple(index) {
-  if (isVaultLockdown && !isDonTier(getUserRank())) {
-    showToast("VAULT LOCKDOWN", "The vault is currently LOCKED by the Moderator! All transactions are temporarily disabled.", "error");
-    return;
-  }
-  if (blacklistedUsers.includes((currentLoggedInUser || '').toLowerCase())) {
-    showToast("ACCOUNT FROZEN", "Akun Anda dibekukan (Blacklist)! Anda tidak diizinkan melakukan transaksi.", "error");
-    return;
-  }
-
-  const item = vaultInventory[index];
-  if (!item || item.stock <= 0) {
-    showToast("OUT OF STOCK", "Barang ini sedang kosong!", "error");
-    return;
-  }
-  if (isAssociate(getUserRank()) && item.restricted) {
-    showToast("ACCESS DENIED", "Rank Associates hanya diizinkan membeli Amunisi, Vest & Attachments!", "error");
-    return;
-  }
-
-  const existingIndex = userCart.findIndex(i => i.name === item.name);
-  if (existingIndex > -1) {
-    if (userCart[existingIndex].qty + 1 > item.stock) {
-      showToast("STOK KURANG", `Maksimal pembelian untuk item ini adalah ${item.stock} unit!`, "error");
-      return;
-    }
-    userCart[existingIndex].qty += 1;
-  } else {
-    userCart.push({ name: item.name, unitPrice: item.price, qty: 1 });
-  }
-  
-  renderCartPageUI();
-  showToast("VAULT ARMORY", `Successfully added 1x ${item.name} ke keranjang!`, "success");
-}
-
-function removeFromCart(index) { userCart.splice(index, 1); renderCartPageUI(); }
-function clearCart() { 
-  if (userCart.length > 0) {
-    showCustomConfirm("KOSONGKAN KERANJANG", "Empty all orders in your shopping cart?", () => {
-      userCart = []; appliedDiscount = 0; renderCartPageUI();
-      showToast("CART CLEARED", "Keranjang berhasil dikosongkan.", "error");
-    });
-  } 
-}
-
-// ==========================================
-// 🎟️ VOUCHER ENGINE
-// ==========================================
-function applyPromoCode() {
-  const codeElem = document.getElementById('promo-code-input');
-  if (!codeElem) return;
-  
-  const code = codeElem.value.trim().toUpperCase();
-  const userRank = getUserRank();
-
-  if (code === '') {
-    if (appliedDiscount > 0) {
-      appliedDiscount = 0;
-      appliedPromoName = '';
-      showToast("VOUCHER DIHAPUS", "Penggunaan voucher telah dibatalkan.", "error");
-      renderCartPageUI();
-    } else {
-      showToast("WARNING", "Harap masukkan kode voucher terlebih dahulu!", "error");
-    }
-    return;
-  }
-
-  const matchedVoucher = syndVouchers.find(v => v.code === code);
-
-  if (!matchedVoucher) {
-    appliedDiscount = 0;
-    appliedPromoName = '';
-    codeElem.value = '';
-    showToast("VOUCHER DITOLAK", "Voucher Tidak Tersedia untuk Digunakan", "error");
-    renderCartPageUI();
-    return;
-  }
-
-  if (matchedVoucher.expiresAt && Date.now() > matchedVoucher.expiresAt) {
-    appliedDiscount = 0;
-    appliedPromoName = '';
-    codeElem.value = '';
-    showToast("VOUCHER EXPIRED", `Voucher ${code} sudah melewati batas waktu (Kadaluarsa)!`, "error");
-    renderCartPageUI();
-    return;
-  }
-
-  if (!matchedVoucher.active) {
-    appliedDiscount = 0;
-    appliedPromoName = '';
-    codeElem.value = '';
-    showToast("VOUCHER NON-AKTIF", `Voucher ${code} saat ini belum diaktifkan oleh Moderator!`, "error");
-    renderCartPageUI();
-    return;
-  }
-
-  if (matchedVoucher.allowed === 'don_tier' && !isDonTier(userRank)) {
-    appliedDiscount = 0;
-    appliedPromoName = '';
-    codeElem.value = '';
-    showToast("VOUCHER EKSKLUSIF", "Voucher ini khusus untuk rank Moderator, Don, Underboss & Admin!", "error");
-    renderCartPageUI();
-    return;
-  }
-
-  if (matchedVoucher.type === 'percent') {
-    appliedDiscount = matchedVoucher.val / 100;
-    appliedPromoName = `${matchedVoucher.code} (${matchedVoucher.val}%)`;
-    showToast("VOUCHER AKTIF", `Diskon ${matchedVoucher.val}% berhasil diterapkan untuk ${userRank}!`, "success");
-  } else {
-    appliedDiscount = matchedVoucher.val;
-    appliedPromoName = `${matchedVoucher.code} ($${matchedVoucher.val.toLocaleString()})`;
-    showToast("VOUCHER AKTIF", `Potongan tunai $${matchedVoucher.val.toLocaleString()} berhasil diterapkan!`, "success");
-  }
-
-  renderCartPageUI();
-}
-
-function renderVoucherManager() {
-  const table = document.getElementById('voucher-manager-table');
-  const countElem = document.getElementById('total-voucher-count');
-  if (!table) return;
-
-  if (countElem) countElem.innerText = syndVouchers.length;
-
-  if (syndVouchers.length === 0) {
-    table.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-zinc-500 italic">There are no voucher codes stored in the system yet.</td></tr>`;
-    return;
-  }
-
-  table.innerHTML = '';
-  syndVouchers.forEach((v, idx) => {
-    const isExpired = v.expiresAt && Date.now() > v.expiresAt;
-
-    const typeLabel = v.type === 'percent' ? `${v.val}% (Persentase)` : `$${v.val.toLocaleString()} (Tunai)`;
-    const allowedLabel = v.allowed === 'don_tier' ? `<span class="px-2.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] rounded-full font-semibold uppercase">High-ranking officials</span>` : `<span class="px-2.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] rounded-full font-semibold uppercase">All Warga</span>`;
-    
-    let expLabel = `<span class="text-zinc-500 font-mono text-[11px]">Without limit</span>`;
-    if (v.expiresAt) {
-      const expDate = new Date(v.expiresAt);
-      const formattedDate = expDate.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-      expLabel = isExpired ? `<span class="text-red-500 font-bold font-mono text-[11px] line-through">${formattedDate} (Expired)</span>` : `<span class="text-amber-400 font-mono text-[11px]">${formattedDate} WIB</span>`;
-    }
-
-    let activeBadge = v.active ? `<span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[10px] font-bold uppercase tracking-wider inline-block">Aktif</span>` : `<span class="px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-[10px] font-bold uppercase tracking-wider inline-block">Non-Aktif</span>`;
-    if (isExpired) activeBadge = `<span class="px-2.5 py-1 bg-zinc-800 text-zinc-500 border border-zinc-700 rounded-lg text-[10px] font-bold uppercase tracking-wider inline-block">Expired</span>`;
-
-    const toggleBtnText = v.active ? 'Non-Aktifkan' : 'Activate Now';
-    const toggleBtnStyle = v.active ? 'bg-[#131622] text-zinc-300 hover:bg-red-600 hover:text-white border border-[#1e2230]' : 'bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-sm';
-
-    table.innerHTML += `
-      <tr class="hover:bg-white/[0.02] transition border-b border-[#1e2230] last:border-0 ${isExpired ? 'opacity-60' : ''}">
-        <td class="p-3.5 font-mono font-bold text-white text-sm">${v.code}</td>
-        <td class="p-3.5 font-semibold text-emerald-400 text-xs">${typeLabel}</td>
-        <td class="p-3.5">${allowedLabel}</td>
-        <td class="p-3.5">${expLabel}</td>
-        <td class="p-3.5 text-zinc-300 max-w-xs truncate">${v.desc || '-'}</td>
-        <td class="p-3.5 text-center">${activeBadge}</td>
-        <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
-          <button onclick="toggleVoucherStatus(${idx})" class="px-3 py-1.5 rounded-xl text-xs transition ${toggleBtnStyle}" ${isExpired ? 'disabled title="Sudah Kadaluarsa"' : ''}>${toggleBtnText}</button>
-          <button onclick="deleteVoucher(${idx})" class="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition" title="Hapus Permanen"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </td>
-      </tr>
-    `;
-  });
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function createNewVoucher() {
-  if (getUserRank() !== 'Moderator') { 
-    showToast("ACCESS DENIED", "Hanya Moderator yang berhak mengelola Voucher!", "error"); 
-    return; 
-  }
-  
-  const codeElem = document.getElementById('new-voucher-code');
-  const typeElem = document.getElementById('new-voucher-type');
-  const valElem = document.getElementById('new-voucher-val');
-  const allowedElem = document.getElementById('new-voucher-allowed');
-  const durationElem = document.getElementById('new-voucher-duration');
-  const descElem = document.getElementById('new-voucher-desc');
-
-  const code = codeElem.value.trim().toUpperCase().replace(/\s+/g, '');
-  const type = typeElem.value;
-  const val = parseInt(valElem.value);
-  const allowed = allowedElem.value;
-  const hoursDuration = parseInt(durationElem.value) || 0;
-  const desc = descElem.value.trim() || 'Syndicate Promo Code';
-
-  if (!code) { showToast("WARNING", "Kode voucher tidak boleh kosong!", "error"); return; }
-  if (isNaN(val) || val <= 0) { showToast("WARNING", "Nilai diskon harus berupa angka lebih dari 0!", "error"); return; }
-
-  const exists = syndVouchers.some(v => v.code === code);
-  if (exists) { showToast("DUPLIKAT", `Kode voucher ${code} sudah ada di tabel!`, "error"); return; }
-
-  let expiresAt = null;
-  if (hoursDuration > 0) {
-    expiresAt = Date.now() + (hoursDuration * 60 * 60 * 1000);
-  }
-
-  syndVouchers.push({ code, type, val, allowed, active: true, expiresAt, desc });
-  saveAppData();
-
-  codeElem.value = ''; valElem.value = ''; descElem.value = ''; durationElem.value = '0';
-  renderVoucherManager();
-  showToast("VOUCHER DISIMPAN", `Voucher ${code} berhasil dibuat dan langsung AKTIF!`, "success");
-}
-
-function toggleVoucherStatus(index) {
-  if (getUserRank() !== 'Moderator') {
-    showToast("ACCESS DENIED", "Hanya Moderator yang berhak mengelola Voucher!", "error");
-    return;
-  }
-  if (syndVouchers[index]) {
-    if (syndVouchers[index].expiresAt && Date.now() > syndVouchers[index].expiresAt) {
-      showToast("WARNING", "Voucher ini sudah kadaluarsa dan tidak bisa diaktifkan lagi!", "error");
-      return;
-    }
-    syndVouchers[index].active = !syndVouchers[index].active;
-    saveAppData();
-    renderVoucherManager();
-    const statText = syndVouchers[index].active ? 'ACTIVATED' : 'DEACTIVATED';
-    showToast("STATUS UPDATED", `Voucher ${syndVouchers[index].code} berhasil ${statText}.`, "success");
-  }
-}
-
-function deleteVoucher(index) {
-  if (getUserRank() !== 'Moderator') {
-    showToast("ACCESS DENIED", "Only Moderators have the authority to manage vouchers!", "error");
-    return;
-  }
-  if (syndVouchers[index]) {
-    showCustomConfirm("HAPUS VOUCHER", `Permanently delete promo code ${syndVouchers[index].code} from the system?`, () => {
-      const deletedCode = syndVouchers[index].code;
-      syndVouchers.splice(index, 1);
-      saveAppData();
-      renderVoucherManager();
-      showToast("VOUCHER DIHAPUS", `Promo code ${deletedCode} has been removed from the system.`, "error");
-    });
-  }
-}
-
-// ==========================================
-// 📦 MODAL TAMBAH BARANG (ADD ITEM)
-// ==========================================
-function addNewInventoryItem() {
-  if (!isBisnisTier(getUserRank())) { 
-    showToast("ACCESS DENIED", "Mode Read-Only tidak dapat menambah barang!", "error"); 
-    return; 
-  }
-  openAddItemModal();
-}
-
-function openAddItemModal() {
-  const modal = document.getElementById('add-item-modal');
-  if (modal) {
-    document.getElementById('new-item-name').value = '';
-    document.getElementById('new-item-price').value = '';
-    document.getElementById('new-item-base').value = '';
-    document.getElementById('new-item-stock').value = '10';
-    document.getElementById('new-item-img-url').value = '';
-    document.getElementById('new-item-desc').value = '';
-    if (document.getElementById('new-item-file')) document.getElementById('new-item-file').value = '';
-    newItemUploadedBase64 = '';
-    
-    modal.classList.remove('hidden');
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-  }
-}
-
-function closeAddItemModal() {
-  const modal = document.getElementById('add-item-modal');
-  if (modal) modal.classList.add('hidden');
-}
-
-// ============================================================================
-// 🛡️ SUPER-SAFE ENGINE: 100% KEBAL BENTROK (ZERO SYNTAX ERROR)
-// ============================================================================
-
-window.tonUploadImgBase64 = window.tonUploadImgBase64 || '';
-window.tonMarketSearch = window.tonMarketSearch || '';
-window.tonMarketSort = window.tonMarketSort || 'name_asc';
-
-function handleNewItemImageUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement('canvas');
-      const maxDim = 400; let width = img.width; let height = img.height;
-      if (width > height) { if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; } }
-      else { if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; } }
-      canvas.width = width; canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      window.tonUploadImgBase64 = canvas.toDataURL('image/jpeg', 0.75);
-      if (typeof showToast === 'function') showToast("IMAGE READY", "Foto barang siap disimpan!", "success");
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function submitNewItem() {
-  try {
-    const nameInput = document.getElementById('new-item-name');
-    const priceInput = document.getElementById('new-item-price');
-    
-    if (!nameInput || !priceInput) { 
-      if (typeof showToast === 'function') showToast("ERROR", "Form input tidak ditemukan!", "error"); 
-      return; 
-    }
-
-    const name = nameInput.value.trim();
-    const cat = document.getElementById('new-item-cat')?.value || 'weapon';
-    const price = parseInt(priceInput.value) || 0;
-    const base = parseInt(document.getElementById('new-item-base')?.value) || price;
-    let stock = parseInt(document.getElementById('new-item-stock')?.value) || 0;
-    const restricted = document.getElementById('new-item-restricted')?.value === 'true';
-    const desc = document.getElementById('new-item-desc')?.value.trim() || 'Custom Syndicate Armory Item';
-    const urlImg = document.getElementById('new-item-img-url')?.value.trim();
-    const statusVal = document.getElementById('new-item-status')?.value || 'ready';
-    
-    const finalImg = window.tonUploadImgBase64 || urlImg;
-
-    if (!name) { if (typeof showToast === 'function') showToast("WARNING", "Nama barang wajib diisi!", "error"); return; }
-    if (price <= 0) { if (typeof showToast === 'function') showToast("WARNING", "Harga jual harus lebih dari 0!", "error"); return; }
-    if (!finalImg) { if (typeof showToast === 'function') showToast("PHOTO MANDATORY", "Wajib upload foto atau masukkan URL gambar!", "error"); return; }
-
-    let badgeVal = "NORMAL";
-    if (statusVal === 'coming_soon') {
-      badgeVal = "COMING SOON";
-      stock = 0;
-    } else if (stock <= 0) {
-      badgeVal = "OUT OF STOCK";
-    } else if (stock <= 5) {
-      badgeVal = "LOW";
-    }
-
-    vaultInventory.unshift({
-      name: name, cat: cat, badge: badgeVal, desc: desc,
-      price: price, base: base, stock: stock,
-      img: finalImg, restricted: restricted
-    });
-
-    if (typeof saveAppData === 'function') saveAppData(); 
-    
-    renderVaultInventory(); 
-    const activeFilter = typeof currentMarketplaceFilter !== 'undefined' ? currentMarketplaceFilter : 'all';
-    renderMarketplace(activeFilter);
-    
-    if (typeof closeAddItemModal === 'function') closeAddItemModal();
-    if (typeof showToast === 'function') showToast("ITEM ADDED", `${name} berhasil ditambahkan!`, "success");
-  } catch (err) {
-    console.error("Error submitNewItem:", err);
-    if (typeof closeAddItemModal === 'function') closeAddItemModal();
-  }
-}
-
-// ============================================================================
-// 🔍 MARKETPLACE RENDERER (DENGAN SEARCH & SORT SAFE-STATE)
-// ============================================================================
-function handleMarketplaceSearch(query) {
-  window.tonMarketSearch = query.toLowerCase().trim();
-  renderMarketplace(typeof currentMarketplaceFilter !== 'undefined' ? currentMarketplaceFilter : 'all');
-}
-
-function handleMarketplaceSort(sortVal) {
-  window.tonMarketSort = sortVal;
-  renderMarketplace(typeof currentMarketplaceFilter !== 'undefined' ? currentMarketplaceFilter : 'all');
-}
-
 function renderMarketplace(category = 'all') {
   try {
     const grid = document.getElementById('product-grid');
@@ -1477,103 +919,68 @@ function renderMarketplace(category = 'all') {
   }
 }
 
-// ============================================================================
-// 📦 VAULT INVENTORY RENDERER (100% SAFE TABLE RENDERER)
-// ============================================================================
-function renderVaultInventory() {
-  try {
-    const grid = document.getElementById('vault-inventory-grid') || document.getElementById('inventory-grid') || document.getElementById('logs-inventory-grid');
-    if (!grid || typeof vaultInventory === 'undefined') return;
-    
-    const activeFilter = typeof activeInventoryFilter !== 'undefined' ? activeInventoryFilter : 'all';
-    
-    const filteredItems = vaultInventory.filter(item => {
-      if (!item) return false;
-      const itemCat = String(item.cat || 'weapon').toLowerCase();
-      if (activeFilter === 'all') return true;
-      if (activeFilter === 'weapon') return itemCat === 'weapon';
-      if (activeFilter === 'ammo') return itemCat === 'ammo';
-      if (activeFilter === 'vest') return itemCat === 'vest';
-      if (activeFilter === 'durgs') return itemCat === 'durgs' || itemCat === 'package';
-      if (activeFilter === 'attachments') return itemCat === 'attachments' || itemCat.includes('attach');
-      if (activeFilter === 'tool-heist') return itemCat === 'tool-heist';
-      return true;
-    });
-    
-    const countElem = document.getElementById('total-inventory-count');
-    if (countElem) countElem.innerText = filteredItems.length;
-    
-    grid.innerHTML = '';
-    if (filteredItems.length === 0) {
-      grid.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 italic"><i data-lucide="box" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>Belum ada barang di kategori ini.</div>`;
-      if (typeof lucide !== 'undefined') lucide.createIcons(); return;
-    }
-
-    const isWritable = ['Admin', 'Moderator', 'Don', 'Underboss', 'Bisnis'].includes(typeof getUserRank === 'function' ? getUserRank() : 'Admin');
-
-    filteredItems.forEach((item) => {
-      const originalIdx = vaultInventory.indexOf(item);
-      const badge = String(item.badge || 'NORMAL').toUpperCase();
-      const isComingSoon = badge === 'COMING SOON' || badge === 'COMING_SOON';
-      
-      let badgeStyle = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
-      if (isComingSoon) badgeStyle = 'bg-pink-500/10 text-pink-500 border border-pink-500/30 font-bold';
-      else if (badge === 'OUT OF STOCK') badgeStyle = 'bg-red-500/10 text-red-500 border border-red-500/20';
-      else if (badge === 'LOW') badgeStyle = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
-      
-      let stockButtonsHtml = '';
-      if (isWritable) {
-        stockButtonsHtml = `
-          <button onclick="changeStock(${originalIdx}, -1)" class="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-600 hover:text-white flex items-center justify-center transition font-bold shrink-0" title="Kurangi Stok">-</button>
-          <button onclick="changeStock(${originalIdx}, 1)" class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition font-bold shrink-0" title="Tambah Stok">+</button>
-          <button onclick="openEditItemModal(${originalIdx})" class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white flex items-center justify-center transition ml-0.5 shrink-0" title="Edit Item Details"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
-          <button onclick="deleteInventoryItem(${originalIdx})" class="w-7 h-7 rounded-lg bg-[#131622] hover:bg-red-600 text-zinc-400 hover:text-white flex items-center justify-center transition ml-0.5 border border-[#1e2230] shrink-0" title="Hapus Barang Permanen"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-        `;
-      }
-
-      grid.innerHTML += `
-        <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-5 flex flex-col justify-between hover:border-zinc-500 transition shadow-sm">
-          <div>
-            <div class="h-36 bg-[#131622] rounded-xl border border-[#1e2230] flex items-center justify-center overflow-hidden mb-5 p-3 relative group">
-              <img src="${item.img || ''}" alt="${item.name || ''}" class="h-full object-contain group-hover:scale-105 transition duration-300">
-            </div>
-            <div class="flex items-center justify-between gap-2 pt-1 mb-2">
-              <h3 class="font-bold text-white text-base truncate leading-relaxed">${item.name || 'Unnamed Item'} <span class="px-2 py-0.5 bg-[#131622] border border-[#1e2230] text-zinc-400 text-[10px] rounded-md ml-1.5 align-middle">${String(item.cat || 'item').toUpperCase()}</span></h3>
-              <span class="px-2.5 py-1 text-[9px] font-bold rounded-full uppercase shrink-0 ${badgeStyle}">${badge === 'NORMAL' ? 'NORMAL' : badge}</span>
-            </div>
-            <p class="text-xs text-zinc-400 line-clamp-2 min-h-[32px] mt-2 leading-relaxed">${item.desc || ''}</p>
-          </div>
-          
-          <div class="border-t border-[#1e2230] pt-3 mt-4 space-y-3">
-            <div class="w-full bg-[#131622]/60 p-2.5 rounded-xl border border-[#1e2230]">
-              <span class="text-[10px] text-zinc-500 block uppercase tracking-wider font-semibold">Selling / Base Price</span>
-              <div class="flex items-baseline gap-1.5 flex-wrap mt-0.5">
-                <span class="text-lg font-bold font-tech text-amber-400 break-all leading-none">$${Number(item.price || 0).toLocaleString()}</span>
-                <span class="text-xs text-zinc-500 font-mono">($${Number(item.base || item.price || 0).toLocaleString()})</span>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between gap-2 pt-0.5">
-              <div class="flex items-center gap-1.5 bg-[#131622] px-2.5 py-1.5 rounded-xl border border-[#1e2230]">
-                <span class="text-[10px] text-zinc-400 uppercase font-semibold">Stock:</span>
-                <span class="text-sm font-bold text-white font-mono leading-none">${Number(item.stock || 0)}</span>
-              </div>
-              <div class="flex items-center gap-1 shrink-0 ml-auto">
-                ${stockButtonsHtml}
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    });
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-  } catch (err) {
-    console.error("Error renderVaultInventory:", err);
-  }
+function filterProducts(category) {
+  currentMarketplaceFilter = category;
+  document.querySelectorAll('.cat-btn').forEach(btn => btn.className = 'cat-btn bg-[#0e1017] text-zinc-400 hover:text-white font-semibold px-4 py-2 border border-[#1e2230] rounded-xl transition text-xs');
+  if (event && event.currentTarget) event.currentTarget.className = 'cat-btn bg-red-600 text-white font-semibold px-4 py-2 rounded-xl transition shadow-sm text-xs';
+  renderMarketplace(category);
 }
-// ==========================================
-// 🛍️ FLOATING CYBERPUNK CART & DRAWER ENGINE
-// ==========================================
+
+function handleMarketplaceSearch(query) {
+  window.tonMarketSearch = query.toLowerCase().trim();
+  renderMarketplace(typeof currentMarketplaceFilter !== 'undefined' ? currentMarketplaceFilter : 'all');
+}
+
+function handleMarketplaceSort(sortVal) {
+  window.tonMarketSort = sortVal;
+  renderMarketplace(typeof currentMarketplaceFilter !== 'undefined' ? currentMarketplaceFilter : 'all');
+}
+
+function addToCartSimple(index) {
+  if (isVaultLockdown && !isDonTier(getUserRank())) {
+    showToast("VAULT LOCKDOWN", "The vault is currently LOCKED by the Moderator! All transactions are temporarily disabled.", "error");
+    return;
+  }
+  if (blacklistedUsers.includes((currentLoggedInUser || '').toLowerCase())) {
+    showToast("ACCOUNT FROZEN", "Akun Anda dibekukan (Blacklist)! Anda tidak diizinkan melakukan transaksi.", "error");
+    return;
+  }
+
+  const item = vaultInventory[index];
+  if (!item || item.stock <= 0) {
+    showToast("OUT OF STOCK", "Barang ini sedang kosong!", "error");
+    return;
+  }
+  if (isAssociate(getUserRank()) && item.restricted) {
+    showToast("ACCESS DENIED", "Rank Associates hanya diizinkan membeli Amunisi, Vest & Attachments!", "error");
+    return;
+  }
+
+  const existingIndex = userCart.findIndex(i => i.name === item.name);
+  if (existingIndex > -1) {
+    if (userCart[existingIndex].qty + 1 > item.stock) {
+      showToast("STOK KURANG", `Maksimal pembelian untuk item ini adalah ${item.stock} unit!`, "error");
+      return;
+    }
+    userCart[existingIndex].qty += 1;
+  } else {
+    userCart.push({ name: item.name, unitPrice: item.price, qty: 1 });
+  }
+  
+  renderCartPageUI();
+  showToast("VAULT ARMORY", `Successfully added 1x ${item.name} ke keranjang!`, "success");
+}
+
+function removeFromCart(index) { userCart.splice(index, 1); renderCartPageUI(); }
+function clearCart() { 
+  if (userCart.length > 0) {
+    showCustomConfirm("KOSONGKAN KERANJANG", "Empty all orders in your shopping cart?", () => {
+      userCart = []; appliedDiscount = 0; renderCartPageUI();
+      showToast("CART CLEARED", "Keranjang berhasil dikosongkan.", "error");
+    });
+  } 
+}
+
 function openCartDrawer() {
   const backdrop = document.getElementById('cart-drawer-backdrop');
   const drawer = document.getElementById('cart-drawer');
@@ -1691,9 +1098,77 @@ function renderCartPageUI() {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+function applyPromoCode() {
+  const codeElem = document.getElementById('promo-code-input');
+  if (!codeElem) return;
+  
+  const code = codeElem.value.trim().toUpperCase();
+  const userRank = getUserRank();
+
+  if (code === '') {
+    if (appliedDiscount > 0) {
+      appliedDiscount = 0;
+      appliedPromoName = '';
+      showToast("VOUCHER DIHAPUS", "Penggunaan voucher telah dibatalkan.", "error");
+      renderCartPageUI();
+    } else {
+      showToast("WARNING", "Harap masukkan kode voucher terlebih dahulu!", "error");
+    }
+    return;
+  }
+
+  const matchedVoucher = syndVouchers.find(v => v.code === code);
+
+  if (!matchedVoucher) {
+    appliedDiscount = 0;
+    appliedPromoName = '';
+    codeElem.value = '';
+    showToast("VOUCHER DITOLAK", "Voucher Tidak Tersedia untuk Digunakan", "error");
+    renderCartPageUI();
+    return;
+  }
+
+  if (matchedVoucher.expiresAt && Date.now() > matchedVoucher.expiresAt) {
+    appliedDiscount = 0;
+    appliedPromoName = '';
+    codeElem.value = '';
+    showToast("VOUCHER EXPIRED", `Voucher ${code} sudah melewati batas waktu (Kadaluarsa)!`, "error");
+    renderCartPageUI();
+    return;
+  }
+
+  if (!matchedVoucher.active) {
+    appliedDiscount = 0;
+    appliedPromoName = '';
+    codeElem.value = '';
+    showToast("VOUCHER NON-AKTIF", `Voucher ${code} saat ini belum diaktifkan oleh Moderator!`, "error");
+    renderCartPageUI();
+    return;
+  }
+
+  if (matchedVoucher.allowed === 'don_tier' && !isDonTier(userRank)) {
+    appliedDiscount = 0;
+    appliedPromoName = '';
+    codeElem.value = '';
+    showToast("VOUCHER EKSKLUSIF", "Voucher ini khusus untuk rank Moderator, Don, Underboss & Admin!", "error");
+    renderCartPageUI();
+    return;
+  }
+
+  if (matchedVoucher.type === 'percent') {
+    appliedDiscount = matchedVoucher.val / 100;
+    appliedPromoName = `${matchedVoucher.code} (${matchedVoucher.val}%)`;
+    showToast("VOUCHER AKTIF", `Diskon ${matchedVoucher.val}% berhasil diterapkan untuk ${userRank}!`, "success");
+  } else {
+    appliedDiscount = matchedVoucher.val;
+    appliedPromoName = `${matchedVoucher.code} ($${matchedVoucher.val.toLocaleString()})`;
+    showToast("VOUCHER AKTIF", `Potongan tunai $${matchedVoucher.val.toLocaleString()} berhasil diterapkan!`, "success");
+  }
+  renderCartPageUI();
+}
+
 function checkoutCart() {
   try {
-    // 1. Cek Lockdown
     if (typeof isVaultLockdown !== 'undefined' && isVaultLockdown) {
       const rank = typeof getUserRank === 'function' ? getUserRank() : 'Soldiers';
       if (typeof isDonTier === 'function' && !isDonTier(rank)) {
@@ -1702,13 +1177,11 @@ function checkoutCart() {
       }
     }
 
-    // 2. Cek Keranjang Kosong
     if (!userCart || !Array.isArray(userCart) || userCart.length === 0) {
       if (typeof showToast === 'function') showToast("WARNING", "Keranjang kosong! Silakan pilih barang terlebih dahulu.", "error");
       return;
     }
 
-    // 3. Setup Order ID & Subtotal
     const orderId = "ORD-" + Math.random().toString(36).substring(2, 10).toUpperCase();
     let subtotal = 0;
     userCart.forEach(i => subtotal += ((Number(i.unitPrice) || 0) * (Number(i.qty) || 1)));
@@ -1726,7 +1199,6 @@ function checkoutCart() {
       }
     }
 
-    // 4. Paksa format Array & Potong Stok
     if (!Array.isArray(vaultInventory)) vaultInventory = [];
     userCart.forEach(cartItem => {
       const invItem = vaultInventory.find(i => i.name === cartItem.name);
@@ -1750,7 +1222,6 @@ function checkoutCart() {
       items: JSON.parse(JSON.stringify(userCart)) 
     };
 
-    // 5. PAKSA FORMAT ARRAY UNTUK DATABASE
     if (!Array.isArray(adminTransactions)) adminTransactions = [];
     adminTransactions.unshift(newTx);
 
@@ -1759,17 +1230,14 @@ function checkoutCart() {
     if (existingSpender) existingSpender.spent = (Number(existingSpender.spent) || 0) + finalSpent;
     else orgLeaderboard.push({ name: activeUser, role: userRank, spent: finalSpent, top: false });
 
-    // 6. Simpan ke Firebase
     if (typeof saveAppData === 'function') saveAppData(); 
 
-    // 7. Tembak Discord Webhook
     if (typeof sendDiscordWebhook === 'function' && typeof ORDERS_WEBHOOK_URL !== 'undefined') {
         sendDiscordWebhook(ORDERS_WEBHOOK_URL, "PESANAN BARU MASUK", `Pesanan dari **${activeUser}**`, [
           { name: "Order ID", value: orderId, inline: true }, { name: "Total Payable", value: "$" + finalSpent.toLocaleString(), inline: true }
         ], 15844367);
     }
 
-    // 8. Bersihkan & Refresh UI
     userCart.length = 0; 
     if (typeof appliedDiscount !== 'undefined') appliedDiscount = 0;
     if (typeof appliedPromoName !== 'undefined') appliedPromoName = '';
@@ -1787,15 +1255,11 @@ function checkoutCart() {
     if (typeof switchTab === 'function') switchTab('my-orders');
 
   } catch (err) {
-    // MENAMPILKAN SUMBER MASALAH ASLI DI CONSOLE
     console.error("🔥 BACA ERROR INI DI CONSOLE:", err);
     if (typeof showToast === 'function') showToast("SYSTEM ERROR", "Terjadi kesalahan sistem. Tekan F12 (Console) untuk melihat detailnya.", "error");
   }
 }
 
-// ==========================================
-// 🔥 TRANSAKSI & ADMIN RENDERER
-// ==========================================
 function filterTxStatus(status) {
   activeTxStatusFilter = status; activeTxPage = 1;
   document.querySelectorAll('[id^="tx-btn-"]').forEach(btn => {
@@ -1991,26 +1455,6 @@ function closeTxDetailModal() { document.getElementById('tx-detail-modal').class
 function approveModalOrder() { if (currentModalTxId) quickApproveTx(currentModalTxId); closeTxDetailModal(); }
 function rejectModalOrder() { if (currentModalTxId) quickRejectTx(currentModalTxId); closeTxDetailModal(); }
 
-// ==========================================
-// 💸 VAULT INVENTORY & STOCK MANAGEMENT
-// ==========================================
-function filterVaultInventory(category) {
-  activeInventoryFilter = category;
-  document.querySelectorAll('#vault-inventory-filters button').forEach(btn => {
-    btn.className = 'cat-btn-inv bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-2 rounded-xl transition text-xs';
-  });
-  const activeBtn = document.getElementById('inv-btn-' + category);
-  if (activeBtn) {
-    activeBtn.className = 'cat-btn-inv bg-red-600 text-white px-4 py-2 rounded-xl transition shadow-sm text-xs';
-  } else if (event && event.currentTarget) {
-    event.currentTarget.className = 'cat-btn-inv bg-red-600 text-white px-4 py-2 rounded-xl transition shadow-sm text-xs';
-  }
-  renderVaultInventory();
-}
-
-// ==========================================
-// 🚀 PERBAIKAN LOGIKA: IZINKAN ROLE BISNIS MEMPROSES / RILIS TRANSAKSI
-// ==========================================
 function quickApproveTx(txId) {
   const userRank = getUserRank();
   if (!isBisnisTier(userRank)) { 
@@ -2048,6 +1492,49 @@ function quickApproveTx(txId) {
   }
 }
 
+function quickRejectTx(txId) {
+  const userRank = getUserRank();
+  if (!isBisnisTier(userRank)) {
+    showToast("ACCESS DENIED", "Read-Only mode cannot reject orders!", "error");
+    return;
+  }
+
+  const tx = adminTransactions.find(t => t.id === txId);
+  if (!tx) {
+    showToast("ERROR", "Transaction not found!", "error");
+    return;
+  }
+
+  const isFinalized = ['Released', 'Approved', 'Rejected'].includes(tx.status);
+  if (isFinalized && !isTopAdmin(userRank)) {
+    showToast("ACCESS DENIED", "You do not have permission to modify completed transactions!", "error");
+    return;
+  }
+
+  showCustomConfirm("REJECT ORDER", `Reject order ${tx.id} from ${tx.buyer}? Stock will be refunded.`, () => {
+    if (tx.items && Array.isArray(tx.items)) {
+      tx.items.forEach(cartItem => {
+        const invItem = vaultInventory.find(i => i.name === cartItem.name);
+        if (invItem) {
+          invItem.stock += cartItem.qty;
+          if (invItem.stock > 5) invItem.badge = 'NORMAL';
+          else if (invItem.stock > 0) invItem.badge = 'LOW';
+        }
+      });
+    }
+
+    tx.status = 'Rejected';
+    tx.processed = currentLoggedInUser || 'ADMIN';
+    saveAppData();
+    updateDashboardData();
+    renderTxProcessTable();
+    renderReleaseOutstanding();
+    renderVaultInventory();
+    renderMarketplace(currentMarketplaceFilter);
+    showToast("ORDER REJECTED", `Order ${tx.id} has been rejected and stock refunded.`, "error");
+  });
+}
+
 function releaseAllOutstanding() {
   if (!isBisnisTier(getUserRank())) { showToast("ACCESS DENIED", "Mode Read-Only tidak dapat merilis saldo!", "error"); return; }
   const waitingReleaseTx = adminTransactions.filter(t => t.status === 'Waiting Release');
@@ -2066,6 +1553,112 @@ function releaseAllOutstanding() {
     sendDiscordWebhook(ORDERS_WEBHOOK_URL, "🟢 MASS SALDO RELEASED", `Sebanyak **${waitingReleaseTx.length} pesanan** telah dirilis oleh **${currentLoggedInUser.toUpperCase()}**. Total saldo **$${totalReleasedCash.toLocaleString()}** masuk ke brangkas!`, [], 3066993);
     showToast("SUCCESS", `Berhasil merilis ${waitingReleaseTx.length} pesanan sebesar $${totalReleasedCash.toLocaleString()} ke Brangkas!`, "success");
   });
+}
+
+function filterVaultInventory(category) {
+  activeInventoryFilter = category;
+  document.querySelectorAll('#vault-inventory-filters button').forEach(btn => {
+    btn.className = 'cat-btn-inv bg-[#131622] text-zinc-400 border border-[#1e2230] hover:text-white px-4 py-2 rounded-xl transition text-xs';
+  });
+  const activeBtn = document.getElementById('inv-btn-' + category);
+  if (activeBtn) {
+    activeBtn.className = 'cat-btn-inv bg-red-600 text-white px-4 py-2 rounded-xl transition shadow-sm text-xs';
+  } else if (event && event.currentTarget) {
+    event.currentTarget.className = 'cat-btn-inv bg-red-600 text-white px-4 py-2 rounded-xl transition shadow-sm text-xs';
+  }
+  renderVaultInventory();
+}
+
+function renderVaultInventory() {
+  try {
+    const grid = document.getElementById('vault-inventory-grid') || document.getElementById('inventory-grid') || document.getElementById('logs-inventory-grid');
+    if (!grid || typeof vaultInventory === 'undefined') return;
+    
+    const activeFilter = typeof activeInventoryFilter !== 'undefined' ? activeInventoryFilter : 'all';
+    
+    const filteredItems = vaultInventory.filter(item => {
+      if (!item) return false;
+      const itemCat = String(item.cat || 'weapon').toLowerCase();
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'weapon') return itemCat === 'weapon';
+      if (activeFilter === 'ammo') return itemCat === 'ammo';
+      if (activeFilter === 'vest') return itemCat === 'vest';
+      if (activeFilter === 'durgs') return itemCat === 'durgs' || itemCat === 'package';
+      if (activeFilter === 'attachments') return itemCat === 'attachments' || itemCat.includes('attach');
+      if (activeFilter === 'tool-heist') return itemCat === 'tool-heist';
+      return true;
+    });
+    
+    const countElem = document.getElementById('total-inventory-count');
+    if (countElem) countElem.innerText = filteredItems.length;
+    
+    grid.innerHTML = '';
+    if (filteredItems.length === 0) {
+      grid.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 italic"><i data-lucide="box" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>Belum ada barang di kategori ini.</div>`;
+      if (typeof lucide !== 'undefined') lucide.createIcons(); return;
+    }
+
+    const isWritable = ['Admin', 'Moderator', 'Don', 'Underboss', 'Bisnis'].includes(typeof getUserRank === 'function' ? getUserRank() : 'Admin');
+
+    filteredItems.forEach((item) => {
+      const originalIdx = vaultInventory.indexOf(item);
+      const badge = String(item.badge || 'NORMAL').toUpperCase();
+      const isComingSoon = badge === 'COMING SOON' || badge === 'COMING_SOON';
+      
+      let badgeStyle = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+      if (isComingSoon) badgeStyle = 'bg-pink-500/10 text-pink-500 border border-pink-500/30 font-bold';
+      else if (badge === 'OUT OF STOCK') badgeStyle = 'bg-red-500/10 text-red-500 border border-red-500/20';
+      else if (badge === 'LOW') badgeStyle = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      
+      let stockButtonsHtml = '';
+      if (isWritable) {
+        stockButtonsHtml = `
+          <button onclick="changeStock(${originalIdx}, -1)" class="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-600 hover:text-white flex items-center justify-center transition font-bold shrink-0" title="Kurangi Stok">-</button>
+          <button onclick="changeStock(${originalIdx}, 1)" class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white flex items-center justify-center transition font-bold shrink-0" title="Tambah Stok">+</button>
+          <button onclick="openEditItemModal(${originalIdx})" class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white flex items-center justify-center transition ml-0.5 shrink-0" title="Edit Item Details"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+          <button onclick="deleteInventoryItem(${originalIdx})" class="w-7 h-7 rounded-lg bg-[#131622] hover:bg-red-600 text-zinc-400 hover:text-white flex items-center justify-center transition ml-0.5 border border-[#1e2230] shrink-0" title="Hapus Barang Permanen"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        `;
+      }
+
+      grid.innerHTML += `
+        <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-5 flex flex-col justify-between hover:border-zinc-500 transition shadow-sm">
+          <div>
+            <div class="h-36 bg-[#131622] rounded-xl border border-[#1e2230] flex items-center justify-center overflow-hidden mb-5 p-3 relative group">
+              <img src="${item.img || ''}" alt="${item.name || ''}" class="h-full object-contain group-hover:scale-105 transition duration-300">
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-1 mb-2">
+              <h3 class="font-bold text-white text-base truncate leading-relaxed">${item.name || 'Unnamed Item'} <span class="px-2 py-0.5 bg-[#131622] border border-[#1e2230] text-zinc-400 text-[10px] rounded-md ml-1.5 align-middle">${String(item.cat || 'item').toUpperCase()}</span></h3>
+              <span class="px-2.5 py-1 text-[9px] font-bold rounded-full uppercase shrink-0 ${badgeStyle}">${badge === 'NORMAL' ? 'NORMAL' : badge}</span>
+            </div>
+            <p class="text-xs text-zinc-400 line-clamp-2 min-h-[32px] mt-2 leading-relaxed">${item.desc || ''}</p>
+          </div>
+          
+          <div class="border-t border-[#1e2230] pt-3 mt-4 space-y-3">
+            <div class="w-full bg-[#131622]/60 p-2.5 rounded-xl border border-[#1e2230]">
+              <span class="text-[10px] text-zinc-500 block uppercase tracking-wider font-semibold">Selling / Base Price</span>
+              <div class="flex items-baseline gap-1.5 flex-wrap mt-0.5">
+                <span class="text-lg font-bold font-tech text-amber-400 break-all leading-none">$${Number(item.price || 0).toLocaleString()}</span>
+                <span class="text-xs text-zinc-500 font-mono">($${Number(item.base || item.price || 0).toLocaleString()})</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-0.5">
+              <div class="flex items-center gap-1.5 bg-[#131622] px-2.5 py-1.5 rounded-xl border border-[#1e2230]">
+                <span class="text-[10px] text-zinc-400 uppercase font-semibold">Stock:</span>
+                <span class="text-sm font-bold text-white font-mono leading-none">${Number(item.stock || 0)}</span>
+              </div>
+              <div class="flex items-center gap-1 shrink-0 ml-auto">
+                ${stockButtonsHtml}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (err) {
+    console.error("Error renderVaultInventory:", err);
+  }
 }
 
 function changeStock(index, delta) {
@@ -2099,9 +1692,300 @@ function deleteInventoryItem(index) {
   }
 }
 
-// ==========================================
-// 📜 FITUR: VAULT TRANSACTION HISTORY
-// ==========================================
+function addNewInventoryItem() {
+  if (!isBisnisTier(getUserRank())) { 
+    showToast("ACCESS DENIED", "Mode Read-Only tidak dapat menambah barang!", "error"); 
+    return; 
+  }
+  openAddItemModal();
+}
+
+function openAddItemModal() {
+  const modal = document.getElementById('add-item-modal');
+  if (modal) {
+    document.getElementById('new-item-name').value = '';
+    document.getElementById('new-item-price').value = '';
+    document.getElementById('new-item-base').value = '';
+    document.getElementById('new-item-stock').value = '10';
+    document.getElementById('new-item-img-url').value = '';
+    document.getElementById('new-item-desc').value = '';
+    if (document.getElementById('new-item-file')) document.getElementById('new-item-file').value = '';
+    newItemUploadedBase64 = '';
+    
+    modal.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+}
+
+function closeAddItemModal() {
+  const modal = document.getElementById('add-item-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+window.tonUploadImgBase64 = window.tonUploadImgBase64 || '';
+window.tonMarketSearch = window.tonMarketSearch || '';
+window.tonMarketSort = window.tonMarketSort || 'name_asc';
+
+function handleNewItemImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxDim = 400; let width = img.width; let height = img.height;
+      if (width > height) { if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; } }
+      else { if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; } }
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      window.tonUploadImgBase64 = canvas.toDataURL('image/jpeg', 0.75);
+      if (typeof showToast === 'function') showToast("IMAGE READY", "Foto barang siap disimpan!", "success");
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitNewItem() {
+  try {
+    const nameInput = document.getElementById('new-item-name');
+    const priceInput = document.getElementById('new-item-price');
+    
+    if (!nameInput || !priceInput) { 
+      if (typeof showToast === 'function') showToast("ERROR", "Form input tidak ditemukan!", "error"); 
+      return; 
+    }
+
+    const name = nameInput.value.trim();
+    const cat = document.getElementById('new-item-cat')?.value || 'weapon';
+    const price = parseInt(priceInput.value) || 0;
+    const base = parseInt(document.getElementById('new-item-base')?.value) || price;
+    let stock = parseInt(document.getElementById('new-item-stock')?.value) || 0;
+    const restricted = document.getElementById('new-item-restricted')?.value === 'true';
+    const desc = document.getElementById('new-item-desc')?.value.trim() || 'Custom Syndicate Armory Item';
+    const urlImg = document.getElementById('new-item-img-url')?.value.trim();
+    const statusVal = document.getElementById('new-item-status')?.value || 'ready';
+    
+    const finalImg = window.tonUploadImgBase64 || urlImg;
+
+    if (!name) { if (typeof showToast === 'function') showToast("WARNING", "Nama barang wajib diisi!", "error"); return; }
+    if (price <= 0) { if (typeof showToast === 'function') showToast("WARNING", "Harga jual harus lebih dari 0!", "error"); return; }
+    if (!finalImg) { if (typeof showToast === 'function') showToast("PHOTO MANDATORY", "Wajib upload foto atau masukkan URL gambar!", "error"); return; }
+
+    let badgeVal = "NORMAL";
+    if (statusVal === 'coming_soon') {
+      badgeVal = "COMING SOON";
+      stock = 0;
+    } else if (stock <= 0) {
+      badgeVal = "OUT OF STOCK";
+    } else if (stock <= 5) {
+      badgeVal = "LOW";
+    }
+
+    vaultInventory.unshift({
+      name: name, cat: cat, badge: badgeVal, desc: desc,
+      price: price, base: base, stock: stock,
+      img: finalImg, restricted: restricted
+    });
+
+    if (typeof saveAppData === 'function') saveAppData(); 
+    
+    renderVaultInventory(); 
+    const activeFilter = typeof currentMarketplaceFilter !== 'undefined' ? currentMarketplaceFilter : 'all';
+    renderMarketplace(activeFilter);
+    
+    if (typeof closeAddItemModal === 'function') closeAddItemModal();
+    if (typeof showToast === 'function') showToast("ITEM ADDED", `${name} berhasil ditambahkan!`, "success");
+  } catch (err) {
+    console.error("Error submitNewItem:", err);
+    if (typeof closeAddItemModal === 'function') closeAddItemModal();
+  }
+}
+
+var currentEditItemIndex = null;
+var editItemUploadedBase64 = '';
+
+function openEditItemModal(index) {
+  if (!isBisnisTier(getUserRank())) { 
+    showToast("ACCESS DENIED", "Mode Read-Only tidak dapat mengedit barang!", "error"); 
+    return; 
+  }
+  const item = vaultInventory[index];
+  if (!item) {
+    showToast("ERROR", "Data barang tidak ditemukan di memori!", "error");
+    return;
+  }
+
+  const modal = document.getElementById('edit-item-modal');
+  if (!modal) { 
+    showToast("ERROR HTML", "Kode Modal Edit belum dipasang di index.html!", "error"); 
+    return; 
+  }
+
+  currentEditItemIndex = index;
+  editItemUploadedBase64 = ''; 
+
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+
+  setVal('edit-item-name', item.name || '');
+  setVal('edit-item-cat', item.cat || 'weapon');
+  setVal('edit-item-price', item.price || 0);
+  setVal('edit-item-base', item.base || 0);
+  setVal('edit-item-stock', item.stock || 0);
+  setVal('edit-item-restricted', String(Boolean(item.restricted)));
+  setVal('edit-item-desc', item.desc || '');
+  setVal('edit-item-img-url', '');
+  
+  const isComingSoon = (item.badge === 'COMING SOON' || item.badge === 'COMING_SOON');
+  const statusSelect = document.getElementById('edit-item-status');
+  if (statusSelect) {
+    statusSelect.value = isComingSoon ? 'coming_soon' : 'ready';
+  }
+
+  if (document.getElementById('edit-item-file')) document.getElementById('edit-item-file').value = '';
+
+  modal.classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeEditItemModal() {
+  const modal = document.getElementById('edit-item-modal');
+  if (modal) modal.classList.add('hidden');
+  currentEditItemIndex = null;
+}
+
+function handleEditItemImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxDim = 400; let width = img.width; let height = img.height;
+      if (width > height) { if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; } }
+      else { if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; } }
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      editItemUploadedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+      showToast("IMAGE READY", "Foto baru siap disimpan!", "success");
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitEditItem() {
+  if (currentEditItemIndex === null || currentEditItemIndex === undefined) {
+    showToast("ERROR SISTEM", "Sesi edit terputus! Harap tutup modal dan klik tombol ikon pensil lagi.", "error");
+    return;
+  }
+  
+  const item = vaultInventory[currentEditItemIndex];
+  if (!item) {
+    showToast("ERROR SISTEM", "Data barang tidak ditemukan pada indeks ke-" + currentEditItemIndex, "error");
+    return;
+  }
+
+  const nameInput = document.getElementById('edit-item-name');
+  if (!nameInput) {
+    showToast("ERROR HTML", "Input ID 'edit-item-name' tidak ditemukan!", "error");
+    return;
+  }
+
+  const name = nameInput.value.trim();
+  const cat = document.getElementById('edit-item-cat')?.value || 'weapon';
+  const price = parseInt(document.getElementById('edit-item-price')?.value) || 0;
+  const base = parseInt(document.getElementById('edit-item-base')?.value) || price;
+  let stock = parseInt(document.getElementById('edit-item-stock')?.value) || 0;
+  const restricted = document.getElementById('edit-item-restricted')?.value === 'true';
+  const desc = document.getElementById('edit-item-desc')?.value.trim() || 'Custom Syndicate Armory Item';
+  const urlImg = document.getElementById('edit-item-img-url')?.value.trim();
+  
+  const statusSelect = document.getElementById('edit-item-status');
+  const statusVal = statusSelect ? statusSelect.value : 'ready';
+
+  if (!name) { showToast("WARNING", "Nama barang tidak boleh kosong!", "error"); return; }
+  if (price <= 0) { showToast("WARNING", "Harga jual harus lebih dari 0!", "error"); return; }
+
+  const oldImg = item.img;
+  const finalImg = editItemUploadedBase64 || urlImg || oldImg;
+
+  let badgeVal = "NORMAL";
+  if (statusVal === 'coming_soon') {
+    badgeVal = "COMING SOON";
+    stock = 0; 
+  } else if (stock <= 0) {
+    badgeVal = "OUT OF STOCK";
+  } else if (stock <= 5) {
+    badgeVal = "LOW";
+  }
+
+  vaultInventory[currentEditItemIndex] = {
+    name: name, cat: cat, badge: badgeVal, desc: desc,
+    price: price, base: base, stock: stock,
+    img: finalImg, restricted: restricted
+  };
+
+  saveAppData(); 
+  renderVaultInventory(); 
+  renderMarketplace(currentMarketplaceFilter);
+  closeEditItemModal();
+  showToast("ITEM UPDATED", `Barang [${name}] berhasil diperbarui menjadi ${badgeVal}!`, "success");
+}
+
+function renderReleaseOutstanding() {
+  const table = document.getElementById('release-outstanding-table');
+  if (!table) return;
+
+  const waitingTx = adminTransactions.filter(t => t.status === 'Waiting Release');
+  const totalOutstanding = waitingTx.reduce((sum, tx) => sum + tx.total, 0);
+
+  const countElem = document.getElementById('outstanding-count');
+  const totalElem = document.getElementById('outstanding-total');
+  if (countElem) countElem.innerText = waitingTx.length;
+  if (totalElem) totalElem.innerText = "$" + totalOutstanding.toLocaleString();
+
+  const canRelease = isBisnisTier(getUserRank());
+  const releaseBtn = document.getElementById('release-all-btn');
+  if (releaseBtn) {
+    releaseBtn.style.display = canRelease && waitingTx.length > 0 ? 'inline-flex' : 'none';
+  }
+
+  if (waitingTx.length === 0) {
+    table.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-zinc-500 italic">No transactions are awaiting release at this time.</td></tr>`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    return;
+  }
+
+  table.innerHTML = '';
+  waitingTx.forEach(tx => {
+    const itemNames = tx.items ? tx.items.map(i => `${i.name} (x${i.qty})`).join(", ") : `${tx.qty} items`;
+    
+    const actionBtn = canRelease
+      ? `<button onclick="quickApproveTx('${tx.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Release Now
+        </button>`
+      : `<span class="text-[10px] text-zinc-500 italic">Read Only</span>`;
+
+    table.innerHTML += `
+      <tr class="hover:bg-white/[0.02] transition border-b border-[#1e2230] last:border-0">
+        <td class="p-3.5 font-mono text-white font-bold text-xs">${tx.id}</td>
+        <td class="p-3.5 font-bold text-white">${tx.buyer}</td>
+        <td class="p-3.5 text-zinc-300 max-w-xs truncate" title="${itemNames}">${itemNames}</td>
+        <td class="p-3.5 font-mono text-zinc-400 text-[11px]">${tx.time}</td>
+        <td class="p-3.5 font-bold text-amber-400">$${tx.total.toLocaleString()}</td>
+        <td class="p-3.5"><span class="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase rounded-full">${tx.processed}</span></td>
+        <td class="p-3.5 text-right">${actionBtn}</td>
+      </tr>
+    `;
+  }); 
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
 function renderVaultHistory(isRefresh = false) {
   const table = document.getElementById('vault-history-table');
   if (!table) return;
@@ -2169,9 +2053,6 @@ function renderVaultHistory(isRefresh = false) {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// ==========================================
-// 📸 FILE UPLOADER DARI LAPTOP/PC & URL PROOF
-// ==========================================
 function handleProofFileUpload(event) {
   if (!isBisnisTier(getUserRank())) {
     showToast("ACCESS DENIED", "Mode Read-Only tidak dapat mengunggah bukti screenshot!", "error");
@@ -2341,9 +2222,6 @@ function renderMetalScrapLogs() {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// ==========================================
-// 🔩 METAL SCRAP ENGINE (DENGAN MODAL KUSTOM)
-// ==========================================
 let scrapCallback = null;
 
 function showCustomPrompt(title, message, defaultValue, onSubmitted) {
@@ -2523,7 +2401,6 @@ function adminUpdateCatalogUser(targetUsername, rankInputId, groupSelectId) {
         customAccounts[lowerTarget].rank = newRank;
     }
 
-    // KUNCI UTAMA: Gunakan fungsi save asli
     if (typeof saveAppData === 'function') {
         saveAppData();
     }
@@ -2756,9 +2633,6 @@ function updateDashboardData() {
   renderStaffKPITable();
 }
 
-// ============================================================================
-// 🚨 FITUR RESET DENGAN DOUBLE AUTENTIKASI (ROSTER SAFE)
-// ============================================================================
 function triggerSystemReset() {
     if (getUserRank() !== 'Moderator') {
         showToast("ACCESS DENIED", "The System Reset feature is EXCLUSIVE to the Moderator rank!", "error");
@@ -2774,18 +2648,15 @@ function triggerSystemReset() {
                     "FINAL CONFIRMATION 2/2: REPEAT WARNING",
                     "This action cannot be undone! Are you absolutely 100% sure you want to delete transaction history?",
                     () => {
-                        // 1. HAPUS MEMORI LOKAL (KECUALI ton_all_profiles)
                         localStorage.removeItem('ton_admin_transactions');
                         localStorage.removeItem('ton_org_leaderboard');
                         localStorage.removeItem('ton_metal_scrap');
                         
-                        // 2. KOSONGKAN VARIABEL TRANSAKSI (JANGAN KOSONGKAN savedProfiles/customAccounts)
                         adminTransactions = [];
                         orgLeaderboard = [];
                         metalScrapLogs = [];
                         vaultBalance = 0;
 
-                        // 3. SIMPAN KE FIREBASE
                         if (typeof saveAppData === 'function') saveAppData();
 
                         showToast("SYSTEM RESET", "Riwayat transaksi berhasil direset! Data Roster AMAN.", "success");
@@ -2795,14 +2666,11 @@ function triggerSystemReset() {
                         }, 1500);
                     }
                 );
-            }, 300); // Sedikit jeda agar modal pertama menutup dengan mulus
+            }, 300);
         }
     );
 }
 
-// ==========================================
-// 📋 FUNGSI PENDUKUNG VISUAL PROOF & ROSTER VIEWER
-// ==========================================
 function openProofViewerModal(index) {
   const log = stockProofLogs[index];
   if (!log || !log.images || log.images.length === 0) {
@@ -2864,9 +2732,6 @@ function openProofViewerModal(index) {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// ==========================================
-// 🔐 MANAJEMEN AKUN CUSTOM (MODERATOR ONLY!)
-// ==========================================
 function renderCustomAccountsTable() {
   const tbody = document.getElementById('custom-accounts-table');
   if (!tbody) return;
@@ -2915,7 +2780,6 @@ function addCustomAccount() {
         groupType: 'Family'
     };
 
-    // 1. TEMBAK LANGSUNG KE FIREBASE (Ini menjamin data terkirim meski memori laptop error)
     try {
         let db = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
         if (db) {
@@ -2924,17 +2788,14 @@ function addCustomAccount() {
         }
     } catch(e) { console.log("Firebase Upload Error:", e); }
 
-    // 2. FUNGSI LAMA DIBUNGKUS AMAN (Agar tidak merusak sistem jika memori browser penuh)
     try {
         if (typeof saveAppData === 'function') saveAppData();
     } catch(e) { console.log("Abaikan error memori lokal"); }
 
-    // 3. REFRESH TAMPILAN
     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
     if (typeof renderTonCatalog === 'function') renderTonCatalog();
     if (typeof showToast === 'function') showToast("AKUN BERHASIL DIBUAT", `Akun ${user} siap dipakai di semua device!`, "success");
 
-    // 4. BERSIHKAN KOLOM
     if (document.getElementById('new-bisnis-user')) document.getElementById('new-bisnis-user').value = '';
     if (document.getElementById('new-bisnis-pass')) document.getElementById('new-bisnis-pass').value = '';
     if (document.getElementById('new-username')) document.getElementById('new-username').value = '';
@@ -2942,14 +2803,12 @@ function addCustomAccount() {
 }
   
 function deleteCustomAccount(username) {
-    // 1. Cek rank kebal huruf besar/kecil
     const currentRank = (typeof getUserRank === 'function' ? getUserRank() : currentUserRole || '').toLowerCase();
     if (currentRank !== 'moderator' && currentRank !== 'admin') {
         if(typeof showToast === 'function') showToast("AKSES DITOLAK", "Hanya Moderator yang bisa menghapus akun.", "error");
         return;
     }
 
-    // 2. Konfirmasi & Eksekusi Hapus
     if (typeof showCustomConfirm === 'function') {
         showCustomConfirm("Hapus Akun", `Yakin hapus akun "${username}"?`, () => executeDelete(username));
     } else if (confirm(`Yakin hapus akun "${username}"?`)) {
@@ -2959,19 +2818,16 @@ function deleteCustomAccount(username) {
     function executeDelete(targetUser) {
         const lowerTarget = targetUser.toLowerCase();
         
-        // Hapus dari data Login
         if (typeof customAccounts !== 'undefined' && customAccounts[lowerTarget]) {
             delete customAccounts[lowerTarget];
         }
         
-        // Hapus dari Roster (Sapu bersih semua huruf besar/kecilnya)
         if (typeof savedProfiles !== 'undefined') {
             const realKey = Object.keys(savedProfiles).find(k => k.toLowerCase() === lowerTarget);
             if (realKey) delete savedProfiles[realKey];
             if (savedProfiles[targetUser]) delete savedProfiles[targetUser];
         }
 
-        // Tembak ke Firebase dan Refresh
         if (typeof saveAppData === 'function') saveAppData();
         if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
         if (typeof renderTonCatalog === 'function') renderTonCatalog();
@@ -2980,10 +2836,6 @@ function deleteCustomAccount(username) {
     }
 }
 
-
-// ============================================================================
-// 🚨 FITUR 1: VAULT LOCKDOWN MODE (PANIC BUTTON)
-// ============================================================================
 function toggleVaultLockdown() {
   if (!isDonTier(getUserRank())) {
     showToast("ACCESS DENIED", "Only the Superiors & Moderators have the right to set the Lockdown status!", "error");
@@ -3032,9 +2884,6 @@ function updateLockdownUI() {
   }
 }
 
-// ============================================================================
-// 🛡️ FITUR 2: BLACKLIST / FREEZE ACCOUNT MANAGER
-// ============================================================================
 function renderBlacklistTable() {
   const tbody = document.getElementById('blacklist-users-table');
   const countElem = document.getElementById('total-blacklist-count');
@@ -3099,9 +2948,6 @@ function removeBlacklistUser(targetUser) {
   });
 }
 
-// ============================================================================
-// 📊 FITUR 3: STAFF KPI & PRODUCTIVITY TRACKER
-// ============================================================================
 function renderStaffKPITable() {
   const tbody = document.getElementById('staff-kpi-table');
   if (!tbody) return;
@@ -3154,9 +3000,6 @@ function renderStaffKPITable() {
   });
 }
 
-// ============================================================================
-// 📊 FITUR 4: SPENDING LEADERBOARD ENGINE
-// ============================================================================
 function renderLeaderboard() {
   const container = document.getElementById('spending-leaderboard-list');
   if (!container) return;
@@ -3193,9 +3036,6 @@ function renderLeaderboard() {
   });
 }
 
-// ==========================================
-// 🔍 FITUR PENCARIAN MENU SIDEBAR (LIVE SEARCH & RBAC SAFE)
-// ==========================================
 function filterSidebarMenu(query) {
   const q = query.toLowerCase().trim();
   const nav = document.querySelector('aside nav');
@@ -3243,304 +3083,171 @@ function filterSidebarMenu(query) {
   });
 }
 
-// ============================================================================
-// ✏️ ENGINE EDIT ITEM (BULLETPROOF & ANTI-SILENT ERROR)
-// ============================================================================
-var currentEditItemIndex = null;
-var editItemUploadedBase64 = '';
-
-function openEditItemModal(index) {
-  if (!isBisnisTier(getUserRank())) { 
-    showToast("ACCESS DENIED", "Mode Read-Only tidak dapat mengedit barang!", "error"); 
-    return; 
-  }
-  const item = vaultInventory[index];
-  if (!item) {
-    showToast("ERROR", "Data barang tidak ditemukan di memori!", "error");
-    return;
-  }
-
-  const modal = document.getElementById('edit-item-modal');
-  if (!modal) { 
-    showToast("ERROR HTML", "Kode Modal Edit belum dipasang di index.html!", "error"); 
-    return; 
-  }
-
-  currentEditItemIndex = index;
-  editItemUploadedBase64 = ''; 
-
-  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-
-  setVal('edit-item-name', item.name || '');
-  setVal('edit-item-cat', item.cat || 'weapon');
-  setVal('edit-item-price', item.price || 0);
-  setVal('edit-item-base', item.base || 0);
-  setVal('edit-item-stock', item.stock || 0);
-  setVal('edit-item-restricted', String(Boolean(item.restricted)));
-  setVal('edit-item-desc', item.desc || '');
-  setVal('edit-item-img-url', '');
-  
-  const isComingSoon = (item.badge === 'COMING SOON' || item.badge === 'COMING_SOON');
-  const statusSelect = document.getElementById('edit-item-status');
-  if (statusSelect) {
-    statusSelect.value = isComingSoon ? 'coming_soon' : 'ready';
-  }
-
-  if (document.getElementById('edit-item-file')) document.getElementById('edit-item-file').value = '';
-
-  modal.classList.remove('hidden');
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function closeEditItemModal() {
-  const modal = document.getElementById('edit-item-modal');
-  if (modal) modal.classList.add('hidden');
-  currentEditItemIndex = null;
-}
-
-function handleEditItemImageUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement('canvas');
-      const maxDim = 400; let width = img.width; let height = img.height;
-      if (width > height) { if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; } }
-      else { if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; } }
-      canvas.width = width; canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      editItemUploadedBase64 = canvas.toDataURL('image/jpeg', 0.75);
-      showToast("IMAGE READY", "Foto baru siap disimpan!", "success");
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function submitEditItem() {
-  if (currentEditItemIndex === null || currentEditItemIndex === undefined) {
-    showToast("ERROR SISTEM", "Sesi edit terputus! Harap tutup modal dan klik tombol ikon pensil lagi.", "error");
-    return;
-  }
-  
-  const item = vaultInventory[currentEditItemIndex];
-  if (!item) {
-    showToast("ERROR SISTEM", "Data barang tidak ditemukan pada indeks ke-" + currentEditItemIndex, "error");
-    return;
-  }
-
-  const nameInput = document.getElementById('edit-item-name');
-  if (!nameInput) {
-    showToast("ERROR HTML", "Input ID 'edit-item-name' tidak ditemukan!", "error");
-    return;
-  }
-
-  const name = nameInput.value.trim();
-  const cat = document.getElementById('edit-item-cat')?.value || 'weapon';
-  const price = parseInt(document.getElementById('edit-item-price')?.value) || 0;
-  const base = parseInt(document.getElementById('edit-item-base')?.value) || price;
-  let stock = parseInt(document.getElementById('edit-item-stock')?.value) || 0;
-  const restricted = document.getElementById('edit-item-restricted')?.value === 'true';
-  const desc = document.getElementById('edit-item-desc')?.value.trim() || 'Custom Syndicate Armory Item';
-  const urlImg = document.getElementById('edit-item-img-url')?.value.trim();
-  
-  const statusSelect = document.getElementById('edit-item-status');
-  const statusVal = statusSelect ? statusSelect.value : 'ready';
-
-  if (!name) { showToast("WARNING", "Nama barang tidak boleh kosong!", "error"); return; }
-  if (price <= 0) { showToast("WARNING", "Harga jual harus lebih dari 0!", "error"); return; }
-
-  const oldImg = item.img;
-  const finalImg = editItemUploadedBase64 || urlImg || oldImg;
-
-  let badgeVal = "NORMAL";
-  if (statusVal === 'coming_soon') {
-    badgeVal = "COMING SOON";
-    stock = 0; 
-  } else if (stock <= 0) {
-    badgeVal = "OUT OF STOCK";
-  } else if (stock <= 5) {
-    badgeVal = "LOW";
-  }
-
-  vaultInventory[currentEditItemIndex] = {
-    name: name, cat: cat, badge: badgeVal, desc: desc,
-    price: price, base: base, stock: stock,
-    img: finalImg, restricted: restricted
-  };
-
-  saveAppData(); 
-  renderVaultInventory(); 
-  renderMarketplace(currentMarketplaceFilter);
-  closeEditItemModal();
-  showToast("ITEM UPDATED", `Barang [${name}] berhasil diperbarui menjadi ${badgeVal}!`, "success");
-}
-
-// ==========================================
-// 🔄 MISSING FUNCTIONS: quickRejectTx & renderReleaseOutstanding
-// ==========================================
-function quickRejectTx(txId) {
-  const userRank = getUserRank();
-  if (!isBisnisTier(userRank)) {
-    showToast("ACCESS DENIED", "Read-Only mode cannot reject orders!", "error");
-    return;
-  }
-
-  const tx = adminTransactions.find(t => t.id === txId);
-  if (!tx) {
-    showToast("ERROR", "Transaction not found!", "error");
-    return;
-  }
-
-  const isFinalized = ['Released', 'Approved', 'Rejected'].includes(tx.status);
-  if (isFinalized && !isTopAdmin(userRank)) {
-    showToast("ACCESS DENIED", "You do not have permission to modify completed transactions!", "error");
-    return;
-  }
-
-  showCustomConfirm("REJECT ORDER", `Reject order ${tx.id} from ${tx.buyer}? Stock will be refunded.`, () => {
-    // Refund stock
-    if (tx.items && Array.isArray(tx.items)) {
-      tx.items.forEach(cartItem => {
-        const invItem = vaultInventory.find(i => i.name === cartItem.name);
-        if (invItem) {
-          invItem.stock += cartItem.qty;
-          if (invItem.stock > 5) invItem.badge = 'NORMAL';
-          else if (invItem.stock > 0) invItem.badge = 'LOW';
-        }
-      });
-    }
-
-    tx.status = 'Rejected';
-    tx.processed = currentLoggedInUser || 'ADMIN';
-    saveAppData();
-    updateDashboardData();
-    renderTxProcessTable();
-    renderReleaseOutstanding();
-    renderVaultInventory();
-    renderMarketplace(currentMarketplaceFilter);
-    showToast("ORDER REJECTED", `Order ${tx.id} has been rejected and stock refunded.`, "error");
-  });
-}
-
-function renderReleaseOutstanding() {
-  const table = document.getElementById('release-outstanding-table');
-  if (!table) return;
-
-  const waitingTx = adminTransactions.filter(t => t.status === 'Waiting Release');
-  const totalOutstanding = waitingTx.reduce((sum, tx) => sum + tx.total, 0);
-
-  const countElem = document.getElementById('outstanding-count');
-  const totalElem = document.getElementById('outstanding-total');
-  if (countElem) countElem.innerText = waitingTx.length;
-  if (totalElem) totalElem.innerText = "$" + totalOutstanding.toLocaleString();
-
-  const canRelease = isBisnisTier(getUserRank());
-  const releaseBtn = document.getElementById('release-all-btn');
-  if (releaseBtn) {
-    releaseBtn.style.display = canRelease && waitingTx.length > 0 ? 'inline-flex' : 'none';
-  }
-
-  if (waitingTx.length === 0) {
-    table.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-zinc-500 italic">No transactions are awaiting release at this time.</td></tr>`;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    return;
-  }
-
-  table.innerHTML = '';
-  waitingTx.forEach(tx => {
-    const itemNames = tx.items ? tx.items.map(i => `${i.name} (x${i.qty})`).join(", ") : `${tx.qty} items`;
-    
-    const actionBtn = canRelease
-      ? `<button onclick="quickApproveTx('${tx.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5">
-          <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Release Now
-        </button>`
-      : `<span class="text-[10px] text-zinc-500 italic">Read Only</span>`;
-
-    table.innerHTML += `
-      <tr class="hover:bg-white/[0.02] transition border-b border-[#1e2230] last:border-0">
-        <td class="p-3.5 font-mono text-white font-bold text-xs">${tx.id}</td>
-        <td class="p-3.5 font-bold text-white">${tx.buyer}</td>
-        <td class="p-3.5 text-zinc-300 max-w-xs truncate" title="${itemNames}">${itemNames}</td>
-        <td class="p-3.5 font-mono text-zinc-400 text-[11px]">${tx.time}</td>
-        <td class="p-3.5 font-bold text-amber-400">$${tx.total.toLocaleString()}</td>
-        <td class="p-3.5"><span class="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase rounded-full">${tx.processed}</span></td>
-        <td class="p-3.5 text-right">${actionBtn}</td>
-      </tr>
-    `;
-  }); 
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-
-// ============================================================================
-// 🪄 FITUR AUTO-UPDATE RANK TANPA RELOGIN
-// ============================================================================
 function checkAndApplyRankChanges() {
-    if (!currentLoggedInUser) return; // Jika belum login, abaikan
+    if (!currentLoggedInUser) return; 
 
     let latestRank = currentUserRole;
     const lowerUser = currentLoggedInUser.toLowerCase();
 
-    // Ambil data pangkat paling baru dari Firebase
     if (typeof savedProfiles !== 'undefined' && savedProfiles[currentLoggedInUser] && savedProfiles[currentLoggedInUser].job) {
         latestRank = savedProfiles[currentLoggedInUser].job;
     } else if (typeof customAccounts !== 'undefined' && customAccounts[lowerUser]) {
         latestRank = customAccounts[lowerUser].rank;
     }
 
-    // Jika pangkat di database BEDA dengan pangkat di layar saat ini
     if (latestRank !== currentUserRole) {
-        currentUserRole = latestRank; // Update variabel sistem
+        currentUserRole = latestRank; 
         
-        // Simpan sesi baru ke memori lokal browser
         localStorage.setItem('ton_current_session', JSON.stringify({ role: currentUserRole, name: currentLoggedInUser }));
 
-        // Ubah tulisan pangkat di pojok kiri bawah UI
         const roleElem = document.getElementById('user-role-text');
         if (roleElem) roleElem.innerText = currentUserRole.toUpperCase();
 
-        // Update hak akses tombol (Sembunyikan/Tampilkan menu Admin)
         if (typeof updateRBACUI === 'function') updateRBACUI();
 
-        // Jika pangkat diturunkan dan tidak boleh lihat menu admin, lempar ke Shop
         if (typeof canViewAdminPanel === 'function' && !canViewAdminPanel(currentUserRole)) {
             if (typeof switchTab === 'function') switchTab('weapon-shop');
         }
 
-        // Tampilkan notifikasi
         if (typeof showToast === 'function') showToast("RANK UPDATED", `Sistem mendeteksi perubahan: Pangkat Anda kini menjadi ${currentUserRole.toUpperCase()}`, "success");
     }
 }
 
+function renderVoucherManager() {
+  const table = document.getElementById('voucher-manager-table');
+  const countElem = document.getElementById('total-voucher-count');
+  if (!table) return;
 
-// =====================================================================
-// 🚨 DIKTATOR SINKRONISASI: MEMAKSA SEMUA DEVICE SAMA PERSIS 🚨
-// =====================================================================
+  if (countElem) countElem.innerText = syndVouchers.length;
+
+  if (syndVouchers.length === 0) {
+    table.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-zinc-500 italic">There are no voucher codes stored in the system yet.</td></tr>`;
+    return;
+  }
+
+  table.innerHTML = '';
+  syndVouchers.forEach((v, idx) => {
+    const isExpired = v.expiresAt && Date.now() > v.expiresAt;
+
+    const typeLabel = v.type === 'percent' ? `${v.val}% (Persentase)` : `$${v.val.toLocaleString()} (Tunai)`;
+    const allowedLabel = v.allowed === 'don_tier' ? `<span class="px-2.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] rounded-full font-semibold uppercase">High-ranking officials</span>` : `<span class="px-2.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] rounded-full font-semibold uppercase">All Warga</span>`;
+    
+    let expLabel = `<span class="text-zinc-500 font-mono text-[11px]">Without limit</span>`;
+    if (v.expiresAt) {
+      const expDate = new Date(v.expiresAt);
+      const formattedDate = expDate.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+      expLabel = isExpired ? `<span class="text-red-500 font-bold font-mono text-[11px] line-through">${formattedDate} (Expired)</span>` : `<span class="text-amber-400 font-mono text-[11px]">${formattedDate} WIB</span>`;
+    }
+
+    let activeBadge = v.active ? `<span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[10px] font-bold uppercase tracking-wider inline-block">Aktif</span>` : `<span class="px-2.5 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-[10px] font-bold uppercase tracking-wider inline-block">Non-Aktif</span>`;
+    if (isExpired) activeBadge = `<span class="px-2.5 py-1 bg-zinc-800 text-zinc-500 border border-zinc-700 rounded-lg text-[10px] font-bold uppercase tracking-wider inline-block">Expired</span>`;
+
+    const toggleBtnText = v.active ? 'Non-Aktifkan' : 'Activate Now';
+    const toggleBtnStyle = v.active ? 'bg-[#131622] text-zinc-300 hover:bg-red-600 hover:text-white border border-[#1e2230]' : 'bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-sm';
+
+    table.innerHTML += `
+      <tr class="hover:bg-white/[0.02] transition border-b border-[#1e2230] last:border-0 ${isExpired ? 'opacity-60' : ''}">
+        <td class="p-3.5 font-mono font-bold text-white text-sm">${v.code}</td>
+        <td class="p-3.5 font-semibold text-emerald-400 text-xs">${typeLabel}</td>
+        <td class="p-3.5">${allowedLabel}</td>
+        <td class="p-3.5">${expLabel}</td>
+        <td class="p-3.5 text-zinc-300 max-w-xs truncate">${v.desc || '-'}</td>
+        <td class="p-3.5 text-center">${activeBadge}</td>
+        <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
+          <button onclick="toggleVoucherStatus(${idx})" class="px-3 py-1.5 rounded-xl text-xs transition ${toggleBtnStyle}" ${isExpired ? 'disabled title="Sudah Kadaluarsa"' : ''}>${toggleBtnText}</button>
+          <button onclick="deleteVoucher(${idx})" class="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition" title="Hapus Permanen"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </td>
+      </tr>
+    `;
+  });
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function createNewVoucher() {
+  if (getUserRank() !== 'Moderator') { 
+    showToast("ACCESS DENIED", "Hanya Moderator yang berhak mengelola Voucher!", "error"); 
+    return; 
+  }
+  
+  const codeElem = document.getElementById('new-voucher-code');
+  const typeElem = document.getElementById('new-voucher-type');
+  const valElem = document.getElementById('new-voucher-val');
+  const allowedElem = document.getElementById('new-voucher-allowed');
+  const durationElem = document.getElementById('new-voucher-duration');
+  const descElem = document.getElementById('new-voucher-desc');
+
+  const code = codeElem.value.trim().toUpperCase().replace(/\s+/g, '');
+  const type = typeElem.value;
+  const val = parseInt(valElem.value);
+  const allowed = allowedElem.value;
+  const hoursDuration = parseInt(durationElem.value) || 0;
+  const desc = descElem.value.trim() || 'Syndicate Promo Code';
+
+  if (!code) { showToast("WARNING", "Kode voucher tidak boleh kosong!", "error"); return; }
+  if (isNaN(val) || val <= 0) { showToast("WARNING", "Nilai diskon harus berupa angka lebih dari 0!", "error"); return; }
+
+  const exists = syndVouchers.some(v => v.code === code);
+  if (exists) { showToast("DUPLIKAT", `Kode voucher ${code} sudah ada di tabel!`, "error"); return; }
+
+  let expiresAt = null;
+  if (hoursDuration > 0) {
+    expiresAt = Date.now() + (hoursDuration * 60 * 60 * 1000);
+  }
+
+  syndVouchers.push({ code, type, val, allowed, active: true, expiresAt, desc });
+  saveAppData();
+
+  codeElem.value = ''; valElem.value = ''; descElem.value = ''; durationElem.value = '0';
+  renderVoucherManager();
+  showToast("VOUCHER DISIMPAN", `Voucher ${code} berhasil dibuat dan langsung AKTIF!`, "success");
+}
+
+function toggleVoucherStatus(index) {
+  if (getUserRank() !== 'Moderator') {
+    showToast("ACCESS DENIED", "Hanya Moderator yang berhak mengelola Voucher!", "error");
+    return;
+  }
+  if (syndVouchers[index]) {
+    if (syndVouchers[index].expiresAt && Date.now() > syndVouchers[index].expiresAt) {
+      showToast("WARNING", "Voucher ini sudah kadaluarsa dan tidak bisa diaktifkan lagi!", "error");
+      return;
+    }
+    syndVouchers[index].active = !syndVouchers[index].active;
+    saveAppData();
+    renderVoucherManager();
+    const statText = syndVouchers[index].active ? 'ACTIVATED' : 'DEACTIVATED';
+    showToast("STATUS UPDATED", `Voucher ${syndVouchers[index].code} berhasil ${statText}.`, "success");
+  }
+}
+
+function deleteVoucher(index) {
+  if (getUserRank() !== 'Moderator') {
+    showToast("ACCESS DENIED", "Only Moderators have the authority to manage vouchers!", "error");
+    return;
+  }
+  if (syndVouchers[index]) {
+    showCustomConfirm("HAPUS VOUCHER", `Permanently delete promo code ${syndVouchers[index].code} from the system?`, () => {
+      const deletedCode = syndVouchers[index].code;
+      syndVouchers.splice(index, 1);
+      saveAppData();
+      renderVoucherManager();
+      showToast("VOUCHER DIHAPUS", `Promo code ${deletedCode} has been removed from the system.`, "error");
+    });
+  }
+}
+
 setTimeout(() => {
     try {
         let db = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
         if (db) {
-            // Memaksa browser untuk TERUS mendengarkan server pusat secara Live!
             db.ref('/').on('value', (snapshot) => {
                 const serverData = snapshot.val();
                 
                 if (serverData) {
-                    // 1. Hancurkan ingatan lokal, timpa dengan data Server Pusat
-                    if (serverData.savedProfiles) {
-                        window.savedProfiles = serverData.savedProfiles;
-                    }
-                    if (serverData.customAccounts) {
-                        window.customAccounts = serverData.customAccounts;
-                    }
-                    if (serverData.blacklistedUsers) {
-                        window.blacklistedUsers = serverData.blacklistedUsers;
-                    }
+                    if (serverData.savedProfiles) window.savedProfiles = serverData.savedProfiles;
+                    if (serverData.customAccounts) window.customAccounts = serverData.customAccounts;
+                    if (serverData.blacklistedUsers) window.blacklistedUsers = serverData.blacklistedUsers;
 
-                    // 2. Paksa layar untuk menggambar ulang tabel Roster & Akun secara instan
                     if (typeof renderTonCatalog === 'function') renderTonCatalog();
                     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
                     
@@ -3551,4 +3258,4 @@ setTimeout(() => {
     } catch(err) { 
         console.log("Sinkronisasi Gagal:", err); 
     }
-}, 1500); // Tunggu 1.5 detik saat web dibuka agar siap menimpa dataggu 2.5 detik agar sistem utama siap
+}, 1500);
