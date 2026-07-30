@@ -813,7 +813,7 @@ function switchTab(tabId) {
   const rank = getUserRank();
   const adminOnlyTabs = ['transaction-process', 'vault-stock', 'release-outstanding', 'vault-history', 'stock-proof', 'metal-scrap'];
   
-  if (adminOnlyTabs.includes(tabId) && !canViewAdminPanel(rank)) {
+  if (adminOnlyTabs.includes(tabId) && !canViewAdminPanel(rank) && rank !== 'Bisnis') {
     showToast("ACCESS DENIED", "The Vault & TON Management area is CONFIDENTIAL!", "error");
     switchTab('weapon-shop'); return;
   }
