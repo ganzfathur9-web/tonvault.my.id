@@ -2841,43 +2841,65 @@ function renderCustomAccountsTable() {
 }
 
 function addCustomAccount() {
-    const user = document.getElementById('new-bisnis-user')?.value.trim();
-    const pass = document.getElementById('new-bisnis-pass')?.value.trim();
-    const rank = document.getElementById('new-bisnis-rank')?.value || 'Bisnis';
+    // 1. Ambil data dari kolom ketikan (Mencakup beberapa ID HTML agar pasti terbaca)
+    const user = document.getElementById('new-bisnis-user')?.value.trim() || document.getElementById('new-username')?.value.trim();
+    const pass = document.getElementById('new-bisnis-pass')?.value.trim() || document.getElementById('new-password')?.value.trim();
+    const rank = document.getElementById('new-bisnis-rank')?.value || document.getElementById('new-rank')?.value || 'Soldiers';
 
-    if (!user || !pass) return;
+    if (!user || !pass) {
+        if (typeof showToast === 'function') showToast("WARNING", "Username dan Password wajib diisi!", "error");
+        return;
+    }
 
     const lowerUser = user.toLowerCase();
+    
+    // Pastikan variabel lokal siap
     if (typeof customAccounts === 'undefined') window.customAccounts = {};
     if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
 
-    customAccounts[lowerUser] = { pass: pass, rank: rank };
-    savedProfiles[lowerUser] = {
-        name: user.toUpperCase(),
-        phone: '0812-XXXX',
-        idcard: 'TON-' + Math.floor(1000 + Math.random() * 9000),
-        job: rank,
-        avatar: '',
-        groupType: 'Family'
+    // 2. BUAT DATA AKUN LOGIN (Masuk ke Account Manage)
+    customAccounts[lowerUser] = { 
+        pass: pass, 
+        rank: rank 
     };
 
-    if (typeof saveAppData === 'function') saveAppData();
-    
-    // 🔥 DIRECT INJECTION FIREBASE (MEMAKSA SERVER MENERIMA AKUN BARU) 🔥
+    // 3. BUAT DATA ROSTER OTOMATIS (Otomatis Divisi 'Family')
+    savedProfiles[lowerUser] = {
+        name: user.toUpperCase(),
+        phone: '0812-' + Math.floor(1000 + Math.random() * 9000), // Beri no HP acak awal
+        idcard: 'TON-' + Math.floor(1000 + Math.random() * 9000), // Beri ID Card acak awal
+        job: rank,
+        avatar: '',
+        groupType: 'Family' // <--- INI KUNCI AGAR OTOMATIS MASUK DIVISI FAMILY
+    };
+
+    // 4. TEMBAK LANGSUNG KE DUA LACI FIREBASE SEKALIGUS
     try {
         let dbRef = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
         if (dbRef) {
-            dbRef.ref('savedProfiles').set(savedProfiles);
-            dbRef.ref('customAccounts').set(customAccounts);
+            // Tembak ke laci Login
+            dbRef.ref('customAccounts/' + lowerUser).set(customAccounts[lowerUser]);
+            // Tembak ke laci Roster
+            dbRef.ref('savedProfiles/' + lowerUser).set(savedProfiles[lowerUser]);
         }
-    } catch(e) { console.log("Firebase Bypass Error:", e); }
+    } catch(e) { 
+        console.log("Firebase Error:", e); 
+    }
 
+    // 5. REFRESH LAYAR (Agar langsung muncul di tabel tanpa perlu refresh web)
     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
     if (typeof renderTonCatalog === 'function') renderTonCatalog();
-    if (typeof showToast === 'function') showToast("AKUN DISIMPAN", `Akun ${user} berhasil dibuat & masuk Roster!`, "success");
+    
+    // Munculkan notifikasi sukses
+    if (typeof showToast === 'function') {
+        showToast("AKUN BERHASIL DIBUAT", `Akun ${user.toUpperCase()} berhasil terdaftar di Roster (Family)!`, "success");
+    }
 
+    // 6. BERSIHKAN KOLOM KETIKAN SETELAH SELESAI
     if (document.getElementById('new-bisnis-user')) document.getElementById('new-bisnis-user').value = '';
     if (document.getElementById('new-bisnis-pass')) document.getElementById('new-bisnis-pass').value = '';
+    if (document.getElementById('new-username')) document.getElementById('new-username').value = '';
+    if (document.getElementById('new-password')) document.getElementById('new-password').value = '';
 }
   
 function deleteCustomAccount(username) {
