@@ -30,11 +30,7 @@ const METAL_SCRAP_WEBHOOK_URL = "https://discord.com/api/webhooks/15304806547965
 // 🚨 OPSI DARURAT: DAFTAR AKUN MANUAL ANTI-GAGAL 🚨
 // =====================================================================
 const AKUN_MANUAL = {
-    "qaz": { pass: "123", rank: "Soldiers", divisi: "Family" },
-    "budi": { pass: "budi123", rank: "Bisnis", divisi: "Family" },
-    "rexy": { pass: "rexy11", rank: "Bisnis", divisi: "Internal" },
-    "joko": { pass: "joko123", rank: "Associates", divisi: "Family" },
-    "memberbaru": { pass: "rahasia", rank: "Soldiers", divisi: "Family" }
+    "xyroo": { pass: "xy123", rank: "Moderator", divisi: "Internal" },
 };
 
 // ---------------------------------------------------------------------
