@@ -38,22 +38,24 @@ const AKUN_MANUAL = {
 };
 
 // ---------------------------------------------------------------------
-// KODE INJEKSI: Memaksa akun di atas masuk ke sistem tanpa peduli Firebase
+// KODE INJEKSI: Memaksa akun masuk ke sistem dan LocalStorage
 setInterval(() => {
-    if (typeof window.customAccounts === 'undefined') window.customAccounts = {};
-    if (typeof window.savedProfiles === 'undefined') window.savedProfiles = {};
-
     let perluRenderUlang = false;
+    
+    // 1. Ambil paksa "Laci Memori" yang dipakai oleh Tabel Roster
+    let localProfiles = JSON.parse(localStorage.getItem('ton_all_profiles') || '{}');
 
     for (let user in AKUN_MANUAL) {
         let data = AKUN_MANUAL[user];
         
-        if (!window.customAccounts[user]) {
-            window.customAccounts[user] = { pass: data.pass, rank: data.rank };
+        // 2. Suntik ke sistem Login
+        if (typeof customAccounts !== 'undefined' && !customAccounts[user]) {
+            customAccounts[user] = { pass: data.pass, rank: data.rank };
         }
         
-        if (!window.savedProfiles[user]) {
-            window.savedProfiles[user] = {
+        // 3. Suntik ke memori sementara
+        if (typeof savedProfiles !== 'undefined' && !savedProfiles[user]) {
+            savedProfiles[user] = {
                 name: user.toUpperCase(),
                 phone: '0812-9999',
                 idcard: 'TON-9999',
@@ -61,14 +63,32 @@ setInterval(() => {
                 avatar: '',
                 groupType: data.divisi
             };
-            perluRenderUlang = true;
+        }
+
+        // 4. SUNTIK MUTLAK KE DALAM LACI LOCAL STORAGE (Agar Tabel Roster Terbaca)
+        if (!localProfiles[user]) {
+            localProfiles[user] = {
+                name: user.toUpperCase(),
+                phone: '0812-9999',
+                idcard: 'TON-9999',
+                job: data.rank,
+                avatar: '',
+                groupType: data.divisi
+            };
+            perluRenderUlang = true; // Tandai bahwa ada data baru
         }
     }
 
     if (perluRenderUlang) {
+        // Kunci laci memorinya dan gambar ulang tabelnya!
+        localStorage.setItem('ton_all_profiles', JSON.stringify(localProfiles));
+        
+        if (typeof saveAppData === 'function') saveAppData();
         if (typeof renderTonCatalog === 'function') renderTonCatalog();
+        if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
     }
-}, 1000); 
+}, 1000);
+// =====================================================================
 
 // ==========================================
 // 🛡️ KONFIGURASI KEAMANAN DISCORD OAUTH2
