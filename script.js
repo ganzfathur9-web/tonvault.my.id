@@ -3533,3 +3533,233 @@ function switchTab(tabId) {
   if (tabId === 'metal-scrap') renderMetalScrapLogs();
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+
+// ============================================================================
+// 📦 PENYEMPURNAAN FITUR PRE-ORDER (PO) SYSTEM
+// ============================================================================
+
+// 1. ROBOT INJEKSI HTML: Menambahkan opsi "Pre-Order" ke dalam dropdown secara otomatis
+setInterval(() => {
+    ['new-item-status', 'edit-item-status'].forEach(id => {
+        const selectElem = document.getElementById(id);
+        if (selectElem && !selectElem.querySelector('option[value="pre_order"]')) {
+            selectElem.insertAdjacentHTML('beforeend', '<option value="pre_order" class="text-purple-400 font-bold">Pre-Order (PO)</option>');
+        }
+    });
+}, 1000);
+
+// 2. TIMPA FUNGSI SIMPAN BARANG BARU
+function submitNewItem() {
+  try {
+    const name = document.getElementById('new-item-name')?.value.trim();
+    const cat = document.getElementById('new-item-cat')?.value || 'weapon';
+    const price = parseInt(document.getElementById('new-item-price')?.value) || 0;
+    const base = parseInt(document.getElementById('new-item-base')?.value) || price;
+    let stock = parseInt(document.getElementById('new-item-stock')?.value) || 0;
+    const restricted = document.getElementById('new-item-restricted')?.value === 'true';
+    const desc = document.getElementById('new-item-desc')?.value.trim() || 'Custom Syndicate Armory Item';
+    const urlImg = document.getElementById('new-item-img-url')?.value.trim();
+    const statusVal = document.getElementById('new-item-status')?.value || 'ready';
+    const finalImg = window.tonUploadImgBase64 || urlImg;
+
+    if (!name || price <= 0 || !finalImg) { showToast("WARNING", "Lengkapi form: Nama, Harga, dan Foto!", "error"); return; }
+
+    let badgeVal = "NORMAL";
+    if (statusVal === 'coming_soon') { badgeVal = "COMING SOON"; stock = 0; }
+    else if (stock <= 0) { badgeVal = "OUT OF STOCK"; } 
+    else if (statusVal === 'pre_order') { badgeVal = "PRE-ORDER"; } // <-- DETEKSI PO
+    else if (stock <= 5) { badgeVal = "LOW"; }
+
+    vaultInventory.unshift({ name, cat, badge: badgeVal, desc, price, base, stock, img: finalImg, restricted });
+    saveAppData(); renderVaultInventory(); renderMarketplace(currentMarketplaceFilter); closeAddItemModal();
+    showToast("ITEM ADDED", `${name} berhasil ditambahkan!`, "success");
+  } catch (err) { console.error(err); closeAddItemModal(); }
+}
+
+// 3. TIMPA FUNGSI EDIT BARANG
+function openEditItemModal(index) {
+  if (!isBisnisTier(getUserRank())) { showToast("ACCESS DENIED", "Mode Read-Only tidak dapat mengedit barang!", "error"); return; }
+  const item = vaultInventory[index]; if (!item) return;
+  currentEditItemIndex = index; editItemUploadedBase64 = ''; 
+
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  setVal('edit-item-name', item.name || ''); setVal('edit-item-cat', item.cat || 'weapon');
+  setVal('edit-item-price', item.price || 0); setVal('edit-item-base', item.base || 0);
+  setVal('edit-item-stock', item.stock || 0); setVal('edit-item-restricted', String(Boolean(item.restricted)));
+  setVal('edit-item-desc', item.desc || ''); setVal('edit-item-img-url', '');
+  
+  const statusSelect = document.getElementById('edit-item-status');
+  if (statusSelect) {
+    if (item.badge === 'COMING SOON') statusSelect.value = 'coming_soon';
+    else if (item.badge === 'PRE-ORDER') statusSelect.value = 'pre_order'; // <-- MENAMPILKAN PO DI MODAL
+    else statusSelect.value = 'ready';
+  }
+  if (document.getElementById('edit-item-file')) document.getElementById('edit-item-file').value = '';
+  document.getElementById('edit-item-modal').classList.remove('hidden'); lucide.createIcons();
+}
+
+function submitEditItem() {
+  if (currentEditItemIndex === null) return;
+  const item = vaultInventory[currentEditItemIndex]; if (!item) return;
+
+  const name = document.getElementById('edit-item-name')?.value.trim();
+  const cat = document.getElementById('edit-item-cat')?.value || 'weapon';
+  const price = parseInt(document.getElementById('edit-item-price')?.value) || 0;
+  const base = parseInt(document.getElementById('edit-item-base')?.value) || price;
+  let stock = parseInt(document.getElementById('edit-item-stock')?.value) || 0;
+  const restricted = document.getElementById('edit-item-restricted')?.value === 'true';
+  const desc = document.getElementById('edit-item-desc')?.value.trim() || '';
+  const urlImg = document.getElementById('edit-item-img-url')?.value.trim();
+  const statusVal = document.getElementById('edit-item-status')?.value || 'ready';
+
+  if (!name || price <= 0) return;
+  const finalImg = editItemUploadedBase64 || urlImg || item.img;
+
+  let badgeVal = "NORMAL";
+  if (statusVal === 'coming_soon') { badgeVal = "COMING SOON"; stock = 0; }
+  else if (stock <= 0) { badgeVal = "OUT OF STOCK"; } 
+  else if (statusVal === 'pre_order') { badgeVal = "PRE-ORDER"; } // <-- DETEKSI PO
+  else if (stock <= 5) { badgeVal = "LOW"; }
+
+  vaultInventory[currentEditItemIndex] = { name, cat, badge: badgeVal, desc, price, base, stock, img: finalImg, restricted };
+  saveAppData(); renderVaultInventory(); renderMarketplace(currentMarketplaceFilter); closeEditItemModal();
+  showToast("ITEM UPDATED", `Barang berhasil diperbarui menjadi ${badgeVal}!`, "success");
+}
+
+// 4. TIMPA UI MARKETPLACE AGAR PO JADI WARNA UNGU
+function renderMarketplace(category = 'all') {
+  try {
+    const grid = document.getElementById('product-grid');
+    if (!grid || typeof vaultInventory === 'undefined') return;
+
+    let filtered = vaultInventory.filter(item => {
+      const itemCat = String(item.cat || 'weapon').toLowerCase();
+      if (category === 'all') return true;
+      if (category === 'weapon') return itemCat === 'weapon';
+      if (category === 'ammo') return itemCat === 'ammo';
+      if (category === 'vest') return itemCat === 'vest';
+      if (category === 'durgs') return itemCat === 'durgs' || itemCat === 'package';
+      if (category === 'attachments') return itemCat === 'attachments' || itemCat.includes('attach');
+      if (category === 'tool-heist') return itemCat === 'tool-heist'; return true;
+    });
+
+    if (window.tonMarketSearch) filtered = filtered.filter(i => (i.name||'').toLowerCase().includes(window.tonMarketSearch) || (i.desc||'').toLowerCase().includes(window.tonMarketSearch));
+    filtered.sort((a, b) => {
+      if (window.tonMarketSort === 'name_asc') return String(a.name||'').localeCompare(String(b.name||''));
+      if (window.tonMarketSort === 'price_desc') return Number(b.price||0) - Number(a.price||0);
+      if (window.tonMarketSort === 'price_asc') return Number(a.price||0) - Number(b.price||0); return 0;
+    });
+
+    if (filtered.length === 0) { grid.innerHTML = `<div class="col-span-full py-12 text-center text-zinc-500 italic">Item not found.</div>`; return; }
+
+    const htmlBuilder = filtered.map(item => {
+      const originalIdx = vaultInventory.indexOf(item);
+      const badge = String(item.badge || 'NORMAL').toUpperCase();
+      const isComingSoon = badge === 'COMING SOON' || badge === 'COMING_SOON';
+      const isPreOrder = badge === 'PRE-ORDER'; // <-- CEK STATUS PO
+      const stockNum = Number(item.stock || 0);
+      const isOOS = (stockNum <= 0) && !isComingSoon;
+      
+      let cardBorder = 'border-[#1e2230] hover:border-red-500/50 bg-[#0e1017] shadow-sm';
+      if (isComingSoon) cardBorder = 'border-emerald-500/60 bg-[#0e1017] shadow-[0_0_15px_rgba(16,185,129,0.15)]';
+      else if (isPreOrder) cardBorder = 'border-purple-500/50 hover:border-purple-400 bg-[#0e1017] shadow-[0_0_15px_rgba(168,85,247,0.10)]'; // <-- BORDER UNGU UNTUK PO
+      else if (isOOS) cardBorder = 'border-red-900/60 opacity-60 bg-red-950/10';
+
+      const imgStyle = isOOS ? 'grayscale opacity-40' : 'group-hover:scale-105 transition duration-300 drop-shadow-md';
+
+      let badgeText = String(item.cat || 'ITEM').toUpperCase();
+      let badgeStyle = 'bg-[#131622] border-[#1e2230] text-zinc-400';
+      if (isComingSoon) { badgeText = 'COMING SOON'; badgeStyle = 'bg-pink-500/10 border-pink-500/30 text-pink-500 font-bold'; }
+      else if (isPreOrder) { badgeText = 'PRE-ORDER'; badgeStyle = 'bg-purple-500/10 border-purple-500/30 text-purple-400 font-bold'; } // <-- BADGE UNGU
+      else if (isOOS) { badgeText = 'OUT OF STOCK'; badgeStyle = 'bg-red-500/10 border-red-500/20 text-red-500'; }
+
+      let priceHtml = `<span class="text-emerald-400 font-bold text-sm">$${Number(item.price || 0).toLocaleString()}</span>`;
+      if (isComingSoon) priceHtml = `<span class="text-zinc-600 font-bold tracking-widest text-sm uppercase">LOCKED</span>`;
+      else if (isPreOrder) priceHtml = `<span class="text-purple-400 font-bold text-sm">$${Number(item.price || 0).toLocaleString()}</span>`;
+
+      let actionButtonHtml = '';
+      if (isComingSoon) { actionButtonHtml = `<div class="w-full pt-1"><button disabled class="w-full bg-[#131622] border border-[#1e2230] text-zinc-600 font-bold py-2 rounded-xl text-xs uppercase tracking-wider cursor-not-allowed">UNAVAILABLE</button></div>`; } 
+      else if (isOOS) { actionButtonHtml = `<span class="text-[10px] font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-lg">STOK KOSONG</span><button disabled class="bg-[#131622] text-zinc-600 font-bold px-3 py-1.5 rounded-xl text-xs cursor-not-allowed">KOSONG</button>`; } 
+      else if (isPreOrder) {
+        // TOMBOL PO UNGU KHUSUS
+        actionButtonHtml = `<span class="text-[10px] text-purple-400 flex items-center gap-1.5 font-medium"><span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span> Sisa Slot (${stockNum})</span>
+        <button onclick="addToCartSimple(${originalIdx})" class="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition shadow-md shadow-purple-600/20 flex items-center gap-1.5 ml-auto"><i data-lucide="clock" class="w-3.5 h-3.5 inline"></i> Pre-Order</button>`;
+      } 
+      else {
+        actionButtonHtml = `<span class="text-[10px] text-zinc-400 flex items-center gap-1.5 font-medium"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Ready (${stockNum})</span>
+        <button onclick="addToCartSimple(${originalIdx})" class="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-1.5 rounded-xl text-xs transition shadow-md shadow-red-600/20 flex items-center gap-1.5 ml-auto"><i data-lucide="shopping-cart" class="w-3.5 h-3.5 inline"></i> Buy</button>`;
+      }
+
+      return `
+        <div class="product-card border rounded-2xl p-4 flex flex-col justify-between group transition duration-200 ${cardBorder}">
+          <div>
+            <div class="h-44 bg-[#131622] rounded-xl border border-[#1e2230] flex items-center justify-center overflow-hidden mb-3 p-3 relative">
+              <img src="${item.img || ''}" class="h-full object-contain ${imgStyle}" loading="lazy">
+              <span class="absolute top-2.5 right-2.5 px-2 py-0.5 border rounded-lg text-[9px] font-bold uppercase backdrop-blur-sm ${badgeStyle}">${badgeText}</span>
+            </div>
+            <div class="flex justify-between items-start mb-1"><h3 class="text-base font-bold text-white transition">${item.name}</h3>${priceHtml}</div>
+            <p class="text-[11px] text-zinc-400 line-clamp-2 min-h-[32px]">${item.desc}</p>
+          </div>
+          <div class="pt-3 border-t border-[#1e2230] mt-4 flex items-center justify-between gap-2">${actionButtonHtml}</div>
+        </div>
+      `;
+    }).join('');
+
+    grid.innerHTML = htmlBuilder; lucide.createIcons();
+  } catch (e) {}
+}
+
+// 5. TIMPA UI INVENTORY AGAR ADA LABEL UNGU
+function renderVaultInventory() {
+  try {
+    const grid = document.getElementById('vault-inventory-grid') || document.getElementById('inventory-grid');
+    if (!grid) return;
+    const activeFilter = typeof activeInventoryFilter !== 'undefined' ? activeInventoryFilter : 'all';
+    
+    const filteredItems = vaultInventory.filter(item => {
+      const itemCat = String(item.cat || 'weapon').toLowerCase();
+      if (activeFilter === 'all') return true;
+      return (itemCat === activeFilter || (activeFilter === 'durgs' && itemCat === 'package') || (activeFilter === 'attachments' && itemCat.includes('attach')));
+    });
+    
+    if (document.getElementById('total-inventory-count')) document.getElementById('total-inventory-count').innerText = filteredItems.length;
+    grid.innerHTML = '';
+    if (filteredItems.length === 0) return;
+
+    const isWritable = ['Admin', 'Moderator', 'Don', 'Underboss', 'Bisnis'].includes(getUserRank());
+
+    filteredItems.forEach((item) => {
+      const originalIdx = vaultInventory.indexOf(item);
+      const badge = String(item.badge || 'NORMAL').toUpperCase();
+      
+      let badgeStyle = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+      if (badge === 'COMING SOON') badgeStyle = 'bg-pink-500/10 text-pink-500 border border-pink-500/30 font-bold';
+      else if (badge === 'PRE-ORDER') badgeStyle = 'bg-purple-500/10 text-purple-400 border border-purple-500/30 font-bold'; // <-- BADGE UNGU DI INVENTORY
+      else if (badge === 'OUT OF STOCK') badgeStyle = 'bg-red-500/10 text-red-500 border border-red-500/20';
+      else if (badge === 'LOW') badgeStyle = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      
+      let stockBtns = isWritable ? `<button onclick="changeStock(${originalIdx}, -1)" class="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center font-bold shrink-0">-</button><button onclick="changeStock(${originalIdx}, 1)" class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0">+</button><button onclick="openEditItemModal(${originalIdx})" class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center ml-0.5 shrink-0"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button><button onclick="deleteInventoryItem(${originalIdx})" class="w-7 h-7 rounded-lg bg-[#131622] text-zinc-400 hover:bg-red-600 hover:text-white flex items-center justify-center ml-0.5 border border-[#1e2230] shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : '';
+
+      grid.innerHTML += `
+        <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-5 flex flex-col justify-between hover:border-zinc-500 transition shadow-sm">
+          <div>
+            <div class="h-36 bg-[#131622] rounded-xl border border-[#1e2230] flex items-center justify-center overflow-hidden mb-5 p-3 relative group"><img src="${item.img || ''}" class="h-full object-contain group-hover:scale-105 transition duration-300"></div>
+            <div class="flex items-center justify-between gap-2 pt-1 mb-2"><h3 class="font-bold text-white text-base truncate leading-relaxed">${item.name} <span class="px-2 py-0.5 bg-[#131622] border border-[#1e2230] text-zinc-400 text-[10px] rounded-md ml-1.5 align-middle">${String(item.cat).toUpperCase()}</span></h3><span class="px-2.5 py-1 text-[9px] font-bold rounded-full uppercase shrink-0 ${badgeStyle}">${badge}</span></div>
+            <p class="text-xs text-zinc-400 line-clamp-2 min-h-[32px] mt-2">${item.desc}</p>
+          </div>
+          <div class="border-t border-[#1e2230] pt-3 mt-4 space-y-3">
+            <div class="w-full bg-[#131622]/60 p-2.5 rounded-xl border border-[#1e2230]">
+              <span class="text-[10px] text-zinc-500 block uppercase font-semibold">Selling / Base Price</span>
+              <div class="flex items-baseline gap-1.5 mt-0.5"><span class="text-lg font-bold font-tech text-amber-400">$${Number(item.price).toLocaleString()}</span><span class="text-xs text-zinc-500 font-mono">($${Number(item.base||item.price).toLocaleString()})</span></div>
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-0.5">
+              <div class="flex items-center gap-1.5 bg-[#131622] px-2.5 py-1.5 rounded-xl border border-[#1e2230]"><span class="text-[10px] text-zinc-400 uppercase font-semibold">Stock / Slot:</span><span class="text-sm font-bold text-white font-mono">${Number(item.stock)}</span></div>
+              <div class="flex items-center gap-1 shrink-0 ml-auto">${stockBtns}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }); lucide.createIcons();
+  } catch (err) {}
+}
