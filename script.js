@@ -3873,3 +3873,23 @@ function switchTab(tabId) {
   if (tabId === 'metal-scrap') renderMetalScrapLogs();
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+
+// ============================================================================
+// 🛡️ REVISI HAK AKSES FINAL: READ-ONLY UNTUK UNDERBOSS, DON & PETINGGI LAIN
+// ============================================================================
+
+// 1. Moderator adalah pemegang kekuasaan tertinggi mutlak
+function isTopAdmin(rank) { return ['moderator'].includes(String(rank).toLowerCase().trim()); }
+
+// 2. Don Tier (Hanya untuk akses ubah Roster & tombol Lockdown darurat)
+function isDonTier(rank) { return ['moderator', 'don', 'underboss'].includes(String(rank).toLowerCase().trim()); }
+
+// 🚨 3. KUNCI UTAMA: Hak Tulis / Edit / Approve HANYA untuk Moderator & Bisnis
+function isBisnisTier(rank) { return ['moderator', 'bisnis'].includes(String(rank).toLowerCase().trim()); }
+
+// 🚨 4. KUNCI KEDUA: Don, Underboss, Consigliere, Captain, Capo dipindah ke kelompok Read-Only (Penonton)
+function isReadOnlyAdminTier(rank) { return ['don', 'underboss', 'consigliere', 'captain', 'capo'].includes(String(rank).toLowerCase().trim()); }
+
+function canViewAdminPanel(rank) { return isBisnisTier(rank) || isReadOnlyAdminTier(rank); }
+function isAssociate(rank) { return String(rank).toLowerCase().trim() === 'associates'; }
