@@ -182,8 +182,7 @@ let _savedInv = getSafeStorage('ton_vault_inventory');
 let vaultInventory = (_savedInv && Array.isArray(_savedInv) && _savedInv.length > 0) ? _savedInv : defaultInventory;
 
 let defaultVouchers = [
-  { code: 'TON2026', type: 'percent', val: 15, allowed: 'don_tier', active: false, expiresAt: null, desc: 'Diskon Spesial 15% untuk Petinggi TON' },
-  { code: 'OLDNORSE', type: 'nominal', val: 50000, allowed: 'don_tier', active: false, expiresAt: null, desc: 'Potongan Tunai $50,000 Petinggi' }
+ 
 ];
 
 let _savedVouch = getSafeStorage('ton_vouchers');
