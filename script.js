@@ -2318,6 +2318,9 @@ function switchCatalogTab(tabName) {
   renderTonCatalog();
 }
 
+// ==========================================
+// 📋 RENDER ROSTER CATALOG (BULLETPROOF FILTER)
+// ==========================================
 function renderTonCatalog() {
   const tableBody = document.getElementById('ton-catalog-table');
   if (!tableBody) return;
@@ -2325,8 +2328,15 @@ function renderTonCatalog() {
   const allUsers = Object.keys(savedProfiles);
 
   const filteredUsers = allUsers.filter(user => {
-    if (currentCatalogTab === 'All') return true;
-    return (savedProfiles[user].groupType || 'Family') === currentCatalogTab;
+    // 🛡️ PERBAIKAN MUTLAK: Tangkap apapun teksnya, hapus spasi, jadikan huruf kecil
+    const tabSaatIni = String(currentCatalogTab || 'All').toLowerCase().trim();
+    
+    // Jika teks dropdown mengandung kata "all", loloskan semua orang!
+    if (tabSaatIni.includes('all')) return true;
+    
+    // Jika tidak, cocokkan dengan divisi masing-masing (Internal / Family)
+    const grupUser = String(savedProfiles[user].groupType || 'Family').toLowerCase().trim();
+    return grupUser === tabSaatIni;
   });
 
   const rank = getUserRank();
@@ -2339,14 +2349,17 @@ function renderTonCatalog() {
 
   if (filteredUsers.length === 0) {
     const colCount = canModifyRoster ? 4 : 3;
-    tableBody.innerHTML = `<tr><td colspan="${colCount}" class="p-4 text-center text-zinc-500 italic">There are no members registered in the category yet.[${currentCatalogTab}].</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="${colCount}" class="p-4 text-center text-zinc-500 italic">There are no members registered in the category yet [${currentCatalogTab}].</td></tr>`;
     return;
   }
+  
   const rankOptions = ["Admin", "Moderator", "Don", "Underboss", "Bisnis", "Consigliere", "Captain", "Capo", "Soldiers", "Associates"];
   tableBody.innerHTML = '';
+  
   filteredUsers.forEach((username, idx) => {
     const prof = savedProfiles[username] || {};
     if (!prof || typeof prof !== 'object' || !prof.name) return;
+    
     const rankInputId = `catalog-rank-${idx}`;
     const groupSelectId = `catalog-group-${idx}`;
     const safeName = prof.name || '-';
