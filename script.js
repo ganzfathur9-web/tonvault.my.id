@@ -3766,35 +3766,42 @@ function renderVaultInventory() {
 
 
 // ============================================================================
-// 🛡️ REVISI HAK AKSES: CAPO, CAPTAIN, CONSIGLIERE BISA MELIHAT (READ-ONLY)
+// 🛡️ PERBAIKAN MUTLAK: MENGEMBALIKAN FOLDER UTAMA & FITUR BISNIS
 // ============================================================================
 
-// 1. TIMPA updateRBACUI untuk mengembalikan menu ke sidebar
 function updateRBACUI() {
   const rank = getUserRank();
   const safeRank = String(rank).toLowerCase().trim();
-  const isWritable = isBisnisTier(rank); // Bisnis ke atas (Bisa Edit)
-  const canView = canViewAdminPanel(rank); // Capo ke atas (Bisa Lihat)
+  const isWritable = isBisnisTier(rank); // Bisnis, Don, Moderator (Punya fitur Edit/Aksi)
+  const canView = canViewAdminPanel(rank); // Capo ke atas (Bisa melihat menu)
 
+  // 🚨 KUNCI UTAMA YANG KEMBALI DITAMBAHKAN: Membuka Folder Induk (Transaction & Order)
+  document.querySelectorAll('.admin-only').forEach(el => {
+    if (canView) el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  });
+
+  // Fitur eksklusif khusus Moderator
   document.querySelectorAll('.mod-only').forEach(el => {
     if (safeRank === 'moderator') el.classList.remove('hidden');
     else el.classList.add('hidden');
   });
 
-  // 🟢 Kembalikan menu Transaksi & Inventory untuk Capo, Captain, Consigliere
+  // Menampilkan sub-menu di kiri layar
   const adminTabs = ['transaction-process', 'vault-stock', 'release-outstanding', 'vault-history', 'stock-proof', 'metal-scrap'];
   adminTabs.forEach(tab => {
      const btn = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
-     if (btn) {
-         // Jika pangkatnya diizinkan melihat (canView), tampilkan menunya!
-         btn.style.display = canView ? 'flex' : 'none'; 
-     }
+     if (btn) btn.style.display = canView ? 'flex' : 'none';
   });
 
-  // 🔴 Kontrol Tombol Aksi (Hanya Bisnis ke atas yang bisa lihat tombol ini)
-  const invBar = document.getElementById('inventory-action-bar');
-  if (invBar) invBar.style.display = isWritable ? 'flex' : 'none';
+  // 🟢 Menampilkan Tombol "+ Add Item" & Aksi Khusus untuk Bisnis, Don, dan Moderator
+  const actionBars = ['inventory-action-bar', 'outstanding-action-bar', 'proof-action-bar', 'scrap-action-bar'];
+  actionBars.forEach(id => {
+      const bar = document.getElementById(id);
+      if (bar) bar.style.display = isWritable ? 'flex' : 'none';
+  });
 
+  // Sembunyikan Dashboard khusus untuk pangkat paling bawah (Associates)
   const navHq = document.getElementById('nav-group-hq');
   if (navHq) {
     if (isAssociate(rank)) navHq.classList.add('hidden');
