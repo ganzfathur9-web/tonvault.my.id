@@ -3766,35 +3766,35 @@ function renderVaultInventory() {
 
 
 // ============================================================================
-// 🛡️ PENYEMPURNAAN HAK AKSES: TRANSACTION (BLOCKED) & INVENTORY (READ-ONLY)
+// 🛡️ REVISI HAK AKSES: CAPO, CAPTAIN, CONSIGLIERE BISA MELIHAT (READ-ONLY)
 // ============================================================================
 
-// 1. TIMPA updateRBACUI untuk menyembunyikan menu Transaksi dari sidebar
+// 1. TIMPA updateRBACUI untuk mengembalikan menu ke sidebar
 function updateRBACUI() {
   const rank = getUserRank();
   const safeRank = String(rank).toLowerCase().trim();
-  // isBisnisTier = Pangkat Bisnis, Underboss, Don, dan Moderator
-  const isWritable = isBisnisTier(rank); 
+  const isWritable = isBisnisTier(rank); // Bisnis ke atas (Bisa Edit)
+  const canView = canViewAdminPanel(rank); // Capo ke atas (Bisa Lihat)
 
   document.querySelectorAll('.mod-only').forEach(el => {
     if (safeRank === 'moderator') el.classList.remove('hidden');
     else el.classList.add('hidden');
   });
 
-  // 🚨 Hapus Menu Transaksi & Log dari layar untuk pangkat di bawah Bisnis
-  const restrictedTabs = ['transaction-process', 'release-outstanding', 'vault-history', 'stock-proof', 'metal-scrap'];
-  restrictedTabs.forEach(tab => {
+  // 🟢 Kembalikan menu Transaksi & Inventory untuk Capo, Captain, Consigliere
+  const adminTabs = ['transaction-process', 'vault-stock', 'release-outstanding', 'vault-history', 'stock-proof', 'metal-scrap'];
+  adminTabs.forEach(tab => {
      const btn = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
      if (btn) {
-         if (isWritable) btn.style.display = 'flex'; 
-         else btn.style.display = 'none'; 
+         // Jika pangkatnya diizinkan melihat (canView), tampilkan menunya!
+         btn.style.display = canView ? 'flex' : 'none'; 
      }
   });
 
-  // Kontrol Tombol Aksi di Atas Halaman (Tambah Barang Baru)
+  // 🔴 Kontrol Tombol Aksi (Hanya Bisnis ke atas yang bisa lihat tombol ini)
   const invBar = document.getElementById('inventory-action-bar');
   if (invBar) invBar.style.display = isWritable ? 'flex' : 'none';
-  
+
   const navHq = document.getElementById('nav-group-hq');
   if (navHq) {
     if (isAssociate(rank)) navHq.classList.add('hidden');
@@ -3802,7 +3802,7 @@ function updateRBACUI() {
   }
 }
 
-// 2. TIMPA switchTab sebagai Satelit Pengawas (Mencegah Bypass)
+// 2. TIMPA switchTab agar mereka diizinkan masuk ke halaman tersebut
 function switchTab(tabId) {
   if (blacklistedUsers.includes((currentLoggedInUser || '').toLowerCase())) {
     logout(); showToast("ACCOUNT FROZEN", "Sesi dihentikan! Akun Anda baru saja dibekukan oleh Moderator.", "error"); triggerBlockedModal(); return;
@@ -3810,14 +3810,15 @@ function switchTab(tabId) {
   
   const rank = getUserRank();
   const safeRank = String(rank).toLowerCase().trim();
-  const isWritable = isBisnisTier(rank); 
+  const canView = canViewAdminPanel(rank); 
 
-  // 🚨 BLOKIR MUTLAK JALUR MENU TRANSAKSI
-  const bisnisOnlyTabs = ['transaction-process', 'release-outstanding', 'vault-history', 'stock-proof', 'metal-scrap'];
-  if (bisnisOnlyTabs.includes(tabId) && !isWritable) {
-    showToast("ACCESS DENIED", "Fitur Transaksi & Log khusus untuk pangkat Bisnis ke atas!", "error"); 
-    switchTab('weapon-shop'); 
-    return;
+  // Pengecekan Akses Menu Admin / Transaksi
+  const adminOnlyTabs = ['transaction-process', 'vault-stock', 'release-outstanding', 'vault-history', 'stock-proof', 'metal-scrap'];
+  
+  // Jika mencoba masuk ke menu Admin TAPI pangkatnya tidak diizinkan melihat (canView)
+  if (adminOnlyTabs.includes(tabId) && !canView) {
+    showToast("ACCESS DENIED", "Area Manajemen Vault ini BERSIFAT RAHASIA!", "error");
+    switchTab('weapon-shop'); return;
   }
 
   if ((tabId === 'voucher-manager' || tabId === 'account-manager' || tabId === 'blacklist-manager') && !isTopAdmin(rank)) {
@@ -3871,65 +3872,4 @@ function switchTab(tabId) {
   }
   if (tabId === 'metal-scrap') renderMetalScrapLogs();
   if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-// 3. TIMPA renderVaultInventory untuk mode READ-ONLY (Tanpa Edit)
-function renderVaultInventory() {
-  try {
-    const grid = document.getElementById('vault-inventory-grid') || document.getElementById('inventory-grid');
-    if (!grid) return;
-    const activeFilter = typeof activeInventoryFilter !== 'undefined' ? activeInventoryFilter : 'all';
-    
-    const filteredItems = vaultInventory.filter(item => {
-      const itemCat = String(item.cat || 'weapon').toLowerCase();
-      if (activeFilter === 'all') return true;
-      return (itemCat === activeFilter || (activeFilter === 'durgs' && itemCat === 'package') || (activeFilter === 'attachments' && itemCat.includes('attach')));
-    });
-    
-    if (document.getElementById('total-inventory-count')) document.getElementById('total-inventory-count').innerText = filteredItems.length;
-    grid.innerHTML = '';
-    if (filteredItems.length === 0) return;
-
-    // 🚨 CEK HAK AKSES UNTUK TOMBOL EDIT 🚨
-    const isWritable = isBisnisTier(getUserRank()); 
-
-    filteredItems.forEach((item) => {
-      const originalIdx = vaultInventory.indexOf(item);
-      const badge = String(item.badge || 'NORMAL').toUpperCase();
-      
-      let badgeStyle = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
-      if (badge === 'COMING SOON') badgeStyle = 'bg-pink-500/10 text-pink-500 border border-pink-500/30 font-bold';
-      else if (badge === 'PRE-ORDER') badgeStyle = 'bg-purple-500/10 text-purple-400 border border-purple-500/30 font-bold'; 
-      else if (badge === 'OUT OF STOCK') badgeStyle = 'bg-red-500/10 text-red-500 border border-red-500/20';
-      else if (badge === 'LOW') badgeStyle = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
-      
-      // Jika Read-Only, tombol ini dikosongkan (hilang dari layar)
-      let stockBtns = isWritable ? 
-        `<button onclick="changeStock(${originalIdx}, -1)" class="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center font-bold shrink-0">-</button>
-         <button onclick="changeStock(${originalIdx}, 1)" class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0">+</button>
-         <button onclick="openEditItemModal(${originalIdx})" class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center ml-0.5 shrink-0"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
-         <button onclick="deleteInventoryItem(${originalIdx})" class="w-7 h-7 rounded-lg bg-[#131622] text-zinc-400 hover:bg-red-600 hover:text-white flex items-center justify-center ml-0.5 border border-[#1e2230] shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` 
-         : '';
-
-      grid.innerHTML += `
-        <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-5 flex flex-col justify-between hover:border-zinc-500 transition shadow-sm">
-          <div>
-            <div class="h-36 bg-[#131622] rounded-xl border border-[#1e2230] flex items-center justify-center overflow-hidden mb-5 p-3 relative group"><img src="${item.img || ''}" class="h-full object-contain group-hover:scale-105 transition duration-300"></div>
-            <div class="flex items-center justify-between gap-2 pt-1 mb-2"><h3 class="font-bold text-white text-base truncate leading-relaxed">${item.name} <span class="px-2 py-0.5 bg-[#131622] border border-[#1e2230] text-zinc-400 text-[10px] rounded-md ml-1.5 align-middle">${String(item.cat).toUpperCase()}</span></h3><span class="px-2.5 py-1 text-[9px] font-bold rounded-full uppercase shrink-0 ${badgeStyle}">${badge}</span></div>
-            <p class="text-xs text-zinc-400 line-clamp-2 min-h-[32px] mt-2">${item.desc}</p>
-          </div>
-          <div class="border-t border-[#1e2230] pt-3 mt-4 space-y-3">
-            <div class="w-full bg-[#131622]/60 p-2.5 rounded-xl border border-[#1e2230]">
-              <span class="text-[10px] text-zinc-500 block uppercase font-semibold">Selling / Base Price</span>
-              <div class="flex items-baseline gap-1.5 mt-0.5"><span class="text-lg font-bold font-tech text-amber-400">$${Number(item.price).toLocaleString()}</span><span class="text-xs text-zinc-500 font-mono">($${Number(item.base||item.price).toLocaleString()})</span></div>
-            </div>
-            <div class="flex items-center justify-between gap-2 pt-0.5">
-              <div class="flex items-center gap-1.5 bg-[#131622] px-2.5 py-1.5 rounded-xl border border-[#1e2230]"><span class="text-[10px] text-zinc-400 uppercase font-semibold">Stock / Slot:</span><span class="text-sm font-bold text-white font-mono">${Number(item.stock)}</span></div>
-              <div class="flex items-center gap-1 shrink-0 ml-auto">${stockBtns}</div>
-            </div>
-          </div>
-        </div>
-      `;
-    }); lucide.createIcons();
-  } catch (err) {}
 }
