@@ -3290,29 +3290,6 @@ function deleteVoucher(index) {
   }
 }
 
-setTimeout(() => {
-    try {
-        let db = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
-        if (db) {
-            db.ref('/').on('value', (snapshot) => {
-                const serverData = snapshot.val();
-                
-                if (serverData) {
-                    if (serverData.savedProfiles) window.savedProfiles = serverData.savedProfiles;
-                    if (serverData.customAccounts) window.customAccounts = serverData.customAccounts;
-                    if (serverData.blacklistedUsers) window.blacklistedUsers = serverData.blacklistedUsers;
-
-                    if (typeof renderTonCatalog === 'function') renderTonCatalog();
-                    if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
-                    
-                    console.log("🔥 SINKRONISASI MUTLAK BERHASIL: Data Roster disamakan dengan Server!");
-                }
-            });
-        }
-    } catch(err) { 
-        console.log("Sinkronisasi Gagal:", err); 
-    }
-}, 1500);
 
 // ==========================================
 // 🔑 ROBOT INJEKSI: TOMBOL GANTI PASSWORD
