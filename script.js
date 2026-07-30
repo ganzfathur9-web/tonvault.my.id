@@ -2466,20 +2466,17 @@ function adminUpdateCatalogUser(targetUsername, rankInputId, groupSelectId) {
         customAccounts[lowerTarget].rank = newRank;
     }
 
-    if (typeof saveAppData === 'function') saveAppData();
-
-    // 🔥 DIRECT INJECTION FIREBASE (MEMAKSA SERVER MENERIMA ROSTER) 🔥
-    try {
-        let dbRef = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
-        if (dbRef) {
-            dbRef.ref('savedProfiles').set(savedProfiles);
-            dbRef.ref('customAccounts').set(customAccounts);
-        }
-    } catch(e) { console.log("Firebase Bypass Error:", e); }
+    // KUNCI UTAMA: Gunakan fungsi save asli
+    if (typeof saveAppData === 'function') {
+        saveAppData();
+    }
 
     if (typeof renderTonCatalog === 'function') renderTonCatalog();
     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
-    if (typeof showToast === 'function') showToast("ROSTER UPDATED", `Data ${targetUsername} berhasil diperbarui jadi ${newRank}!`, "success");
+    
+    if (typeof showToast === 'function') {
+        showToast("ROSTER UPDATED", `Data ${targetUsername} berhasil diperbarui jadi ${newRank}!`, "success");
+    }
 }
 
 function adminDeleteUser(targetUsername) {
@@ -2841,7 +2838,6 @@ function renderCustomAccountsTable() {
 }
 
 function addCustomAccount() {
-    // 1. Ambil data dari kolom ketikan (Mencakup beberapa ID HTML agar pasti terbaca)
     const user = document.getElementById('new-bisnis-user')?.value.trim() || document.getElementById('new-username')?.value.trim();
     const pass = document.getElementById('new-bisnis-pass')?.value.trim() || document.getElementById('new-password')?.value.trim();
     const rank = document.getElementById('new-bisnis-rank')?.value || document.getElementById('new-rank')?.value || 'Soldiers';
@@ -2852,50 +2848,34 @@ function addCustomAccount() {
     }
 
     const lowerUser = user.toLowerCase();
-    
-    // Pastikan variabel lokal siap
     if (typeof customAccounts === 'undefined') window.customAccounts = {};
     if (typeof savedProfiles === 'undefined') window.savedProfiles = {};
 
-    // 2. BUAT DATA AKUN LOGIN (Masuk ke Account Manage)
-    customAccounts[lowerUser] = { 
-        pass: pass, 
-        rank: rank 
-    };
-
-    // 3. BUAT DATA ROSTER OTOMATIS (Otomatis Divisi 'Family')
+    // 1. Simpan ke variabel Roster & Account (Otomatis Family)
+    customAccounts[lowerUser] = { pass: pass, rank: rank };
     savedProfiles[lowerUser] = {
         name: user.toUpperCase(),
-        phone: '0812-' + Math.floor(1000 + Math.random() * 9000), // Beri no HP acak awal
-        idcard: 'TON-' + Math.floor(1000 + Math.random() * 9000), // Beri ID Card acak awal
+        phone: '0812-' + Math.floor(1000 + Math.random() * 9000),
+        idcard: 'TON-' + Math.floor(1000 + Math.random() * 9000),
         job: rank,
         avatar: '',
-        groupType: 'Family' // <--- INI KUNCI AGAR OTOMATIS MASUK DIVISI FAMILY
+        groupType: 'Family'
     };
 
-    // 4. TEMBAK LANGSUNG KE DUA LACI FIREBASE SEKALIGUS
-    try {
-        let dbRef = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
-        if (dbRef) {
-            // Tembak ke laci Login
-            dbRef.ref('customAccounts/' + lowerUser).set(customAccounts[lowerUser]);
-            // Tembak ke laci Roster
-            dbRef.ref('savedProfiles/' + lowerUser).set(savedProfiles[lowerUser]);
-        }
-    } catch(e) { 
-        console.log("Firebase Error:", e); 
+    // 2. KUNCI UTAMA: Gunakan saveAppData asli agar masuk ke folder Firebase yang BENAR
+    if (typeof saveAppData === 'function') {
+        saveAppData();
     }
 
-    // 5. REFRESH LAYAR (Agar langsung muncul di tabel tanpa perlu refresh web)
+    // 3. Render Ulang Layar
     if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
     if (typeof renderTonCatalog === 'function') renderTonCatalog();
     
-    // Munculkan notifikasi sukses
     if (typeof showToast === 'function') {
         showToast("AKUN BERHASIL DIBUAT", `Akun ${user.toUpperCase()} berhasil terdaftar di Roster (Family)!`, "success");
     }
 
-    // 6. BERSIHKAN KOLOM KETIKAN SETELAH SELESAI
+    // 4. Bersihkan Kolom
     if (document.getElementById('new-bisnis-user')) document.getElementById('new-bisnis-user').value = '';
     if (document.getElementById('new-bisnis-pass')) document.getElementById('new-bisnis-pass').value = '';
     if (document.getElementById('new-username')) document.getElementById('new-username').value = '';
