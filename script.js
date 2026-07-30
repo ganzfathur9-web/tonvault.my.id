@@ -31,33 +31,29 @@ const METAL_SCRAP_WEBHOOK_URL = "https://discord.com/api/webhooks/15304806547965
 // =====================================================================
 const AKUN_MANUAL = {
     "qaz": { pass: "123", rank: "Soldiers", divisi: "Family" },
-    "budi": { pass: "budi123", rank: "Bisnis", divisi: "Internal" },
+    "budi": { pass: "budi123", rank: "Bisnis", divisi: "Family" },
     "rexy": { pass: "rexy11", rank: "Bisnis", divisi: "Internal" },
     "joko": { pass: "joko123", rank: "Associates", divisi: "Family" },
-    "memberbaru": { pass: "rahasia", rank: "Soldiers", divisi: "Family" },
-    "xoxo": { pass: "xoxo", rank: "Bisnis", divisi: "Family" }
-
+    "memberbaru": { pass: "rahasia", rank: "Soldiers", divisi: "Family" }
 };
 
 // ---------------------------------------------------------------------
-// KODE INJEKSI: Memaksa akun masuk ke sistem dan LocalStorage
+// KODE INJEKSI: Memaksa akun di atas masuk ke sistem tanpa peduli Firebase
 setInterval(() => {
+    if (typeof window.customAccounts === 'undefined') window.customAccounts = {};
+    if (typeof window.savedProfiles === 'undefined') window.savedProfiles = {};
+
     let perluRenderUlang = false;
-    
-    // 1. Ambil paksa "Laci Memori" yang dipakai oleh Tabel Roster
-    let localProfiles = JSON.parse(localStorage.getItem('ton_all_profiles') || '{}');
 
     for (let user in AKUN_MANUAL) {
         let data = AKUN_MANUAL[user];
         
-        // 2. Suntik ke sistem Login
-        if (typeof customAccounts !== 'undefined' && !customAccounts[user]) {
-            customAccounts[user] = { pass: data.pass, rank: data.rank };
+        if (!window.customAccounts[user]) {
+            window.customAccounts[user] = { pass: data.pass, rank: data.rank };
         }
         
-        // 3. Suntik ke memori sementara
-        if (typeof savedProfiles !== 'undefined' && !savedProfiles[user]) {
-            savedProfiles[user] = {
+        if (!window.savedProfiles[user]) {
+            window.savedProfiles[user] = {
                 name: user.toUpperCase(),
                 phone: '0812-9999',
                 idcard: 'TON-9999',
@@ -65,33 +61,14 @@ setInterval(() => {
                 avatar: '',
                 groupType: data.divisi
             };
-        }
-
-        // 4. SUNTIK MUTLAK KE DALAM LACI LOCAL STORAGE (Agar Tabel Roster Terbaca)
-        if (!localProfiles[user]) {
-            localProfiles[user] = {
-                name: user.toUpperCase(),
-                phone: '0812-9999',
-                idcard: 'TON-9999',
-                job: data.rank,
-                avatar: '',
-                groupType: data.divisi
-            };
-            perluRenderUlang = true; // Tandai bahwa ada data baru
+            perluRenderUlang = true;
         }
     }
 
     if (perluRenderUlang) {
-        // Kunci laci memorinya dan gambar ulang tabelnya!
-        localStorage.setItem('ton_all_profiles', JSON.stringify(localProfiles));
-        
-        if (typeof saveAppData === 'function') saveAppData();
         if (typeof renderTonCatalog === 'function') renderTonCatalog();
-        if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
     }
-}, 1000);
-// =====================================================================
-// =====================================================================
+}, 1000); 
 
 // ==========================================
 // 🛡️ KONFIGURASI KEAMANAN DISCORD OAUTH2
@@ -136,12 +113,9 @@ let isVaultLockdown = getSafeStorage('ton_vault_lockdown') || false;
 let blacklistedUsers = getSafeStorage('ton_blacklisted_users') || [];
 let savedProfiles = getSafeStorage('ton_all_profiles') || {}; 
 
-llet defaultCustomAccounts = {
-  "xyroo": { pass: "Xyroo13", rank: "Moderator" },
-  "mike": { pass: "mike55", rank: "Don" },
-  "nayi123": { pass: "nayi123", rank: "Bisnis" },
-  "nayi12345": { pass: "nayi12345", rank: "Associates" },
-  "nay": { pass: "nay", rank: "Soldiers" },
+// HANYA MASTER AKUN YANG TERSISA, AKUN HANTU TELAH DIHAPUS
+let defaultCustomAccounts = {
+  "xyroo": { pass: "Xyroo13", rank: "Moderator" }
 };
 
 let savedAccounts = getSafeStorage('ton_custom_accounts') || {};
@@ -3283,16 +3257,12 @@ setTimeout(() => {
     }
 }, 1500);
 
-
 // ==========================================
 // 🔑 ROBOT INJEKSI: TOMBOL GANTI PASSWORD
 // ==========================================
 setInterval(() => {
-    // 1. Cari tempat meletakkan tombol (di bawah badge pangkat)
     const badgeElem = document.getElementById('profile-rank-badge');
     const btnId = 'change-pwd-btn-force';
-    
-    // 2. Jika badge ada, dan tombol belum ada, panggil tombolnya!
     if (badgeElem && !document.getElementById(btnId)) {
         const btnHtml = `<button id="${btnId}" onclick="promptChangePasswordModal()" class="mt-2.5 flex items-center gap-1.5 text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1.5 rounded-lg hover:bg-amber-500 hover:text-black transition shadow-sm uppercase font-bold"><i data-lucide="key" class="w-3.5 h-3.5"></i> GANTI PASSWORD</button>`;
         badgeElem.insertAdjacentHTML('afterend', btnHtml);
