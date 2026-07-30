@@ -3437,25 +3437,37 @@ function checkAndApplyRankChanges() {
 
 
 // =====================================================================
-// 🔥 RADAR SINKRONISASI REAL-TIME ROSTER & AKUN ANTAR DEVICE 🔥
+// 🚨 DIKTATOR SINKRONISASI: MEMAKSA SEMUA DEVICE SAMA PERSIS 🚨
 // =====================================================================
 setTimeout(() => {
     try {
         let db = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
         if (db) {
-            // 1. Radar untuk List Roster
-            db.ref('savedProfiles').on('value', (snap) => {
-                window.savedProfiles = snap.val() || {};
-                if (typeof renderTonCatalog === 'function') renderTonCatalog();
-            });
-            
-            // 2. Radar untuk Account Manage
-            db.ref('customAccounts').on('value', (snap) => {
-                window.customAccounts = snap.val() || {};
-                if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+            // Memaksa browser untuk TERUS mendengarkan server pusat secara Live!
+            db.ref('/').on('value', (snapshot) => {
+                const serverData = snapshot.val();
+                
+                if (serverData) {
+                    // 1. Hancurkan ingatan lokal, timpa dengan data Server Pusat
+                    if (serverData.savedProfiles) {
+                        window.savedProfiles = serverData.savedProfiles;
+                    }
+                    if (serverData.customAccounts) {
+                        window.customAccounts = serverData.customAccounts;
+                    }
+                    if (serverData.blacklistedUsers) {
+                        window.blacklistedUsers = serverData.blacklistedUsers;
+                    }
+
+                    // 2. Paksa layar untuk menggambar ulang tabel Roster & Akun secara instan
+                    if (typeof renderTonCatalog === 'function') renderTonCatalog();
+                    if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+                    
+                    console.log("🔥 SINKRONISASI MUTLAK BERHASIL: Data Roster disamakan dengan Server!");
+                }
             });
         }
-    } catch(e) { 
-        console.log("Radar Realtime Error:", e); 
+    } catch(err) { 
+        console.log("Sinkronisasi Gagal:", err); 
     }
-}, 2500); // Menunggu 2.5 detik agar sistem utama siap
+}, 1500); // Tunggu 1.5 detik saat web dibuka agar siap menimpa dataggu 2.5 detik agar sistem utama siap
