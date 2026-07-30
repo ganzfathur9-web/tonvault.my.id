@@ -402,12 +402,13 @@ function getUserRank() {
   return prof.job || currentUserRole || 'Soldiers';
 }
 
-function isTopAdmin(rank) { return ['Admin', 'Moderator'].includes(rank); }
-function isDonTier(rank) { return ['Admin', 'Moderator', 'Don', 'Underboss'].includes(rank); }
-function isBisnisTier(rank) { return ['Admin', 'Moderator', 'Don', 'Underboss', 'Bisnis'].includes(rank); }
+function isTopAdmin(rank) { return ['Moderator'].includes(rank); }
+function isDonTier(rank) { return ['Moderator', 'Don', 'Underboss'].includes(rank); }
+function isBisnisTier(rank) { return ['Moderator', 'Don', 'Underboss', 'Bisnis'].includes(rank); }
 function isReadOnlyAdminTier(rank) { return ['Capo', 'Captain', 'Consigliere'].includes(rank); }
 function canViewAdminPanel(rank) { return isBisnisTier(rank) || isReadOnlyAdminTier(rank); }
 function isAssociate(rank) { return rank === 'Associates'; }
+
 
 function updateRBACUI() {
   const rank = getUserRank();
@@ -626,10 +627,9 @@ function handleAuthLogin(e) {
         finalRank = customAccounts[lowerUser].rank || 'Soldiers';
     }
     // 4. CEK AKUN BAWAAN
-    else if (pass === 'admin123' || pass === 'xxx123') {
+   else if (pass === 'admin123' || pass === 'xxx123') {
         isAllowed = true;
-        if (lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Admin';
-        else if (lowerUser === 'moderator' || lowerUser === 'mike' || lowerUser === 'xyroo') finalRank = 'Moderator';
+        if (lowerUser === 'moderator' || lowerUser === 'mike' || lowerUser === 'xyroo' || lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Moderator';
         else if (lowerUser === 'don') finalRank = 'Don';
         else if (lowerUser === 'underboss') finalRank = 'Underboss';
         else if (lowerUser === 'bisnis') finalRank = 'Bisnis';
@@ -1656,7 +1656,7 @@ function renderVaultInventory() {
 }
 
 function changeStock(index, delta) {
-  if (!['Admin', 'Moderator', 'Don', 'Underboss', 'Bisnis'].includes(getUserRank())) return;
+  if (!isBisnisTier(getUserRank())) return;
   if (vaultInventory[index]) {
     vaultInventory[index].stock = Math.max(0, vaultInventory[index].stock + delta);
     if (vaultInventory[index].stock === 0) vaultInventory[index].badge = 'OUT OF STOCK';
@@ -1670,7 +1670,7 @@ function changeStock(index, delta) {
 }
 
 function deleteInventoryItem(index) {
-  if (!['Admin', 'Moderator', 'Don', 'Underboss', 'Bisnis'].includes(getUserRank())) {
+  if (!isBisnisTier(getUserRank())) {
     showToast("ACCESS DENIED", "Your rank does not have permission to delete items!", "error");
     return;
   }
@@ -2352,7 +2352,7 @@ function renderTonCatalog() {
     return;
   }
   
-  const rankOptions = ["Admin", "Moderator", "Don", "Underboss", "Bisnis", "Consigliere", "Captain", "Capo", "Soldiers", "Associates"];
+  const rankOptions = ["Moderator", "Don", "Underboss", "Bisnis", "Consigliere", "Captain", "Capo", "Soldiers", "Associates"];
   tableBody.innerHTML = '';
   
   filteredUsers.forEach((username, idx) => {
