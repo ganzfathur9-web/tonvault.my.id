@@ -34,7 +34,7 @@ const AKUN_MANUAL = {
     "budi": { pass: "budi123", rank: "Bisnis", divisi: "Internal" },
     "rexy": { pass: "rexy11", rank: "Bisnis", divisi: "Internal" },
     "joko": { pass: "joko123", rank: "Associates", divisi: "Family" },
-    "memberbaru": { pass: "rahasia", rank: "Soldiers", divisi: "Family" }
+    "memberbaru": { pass: "rahasia", rank: "Soldiers", divisi: "Family" },
     "xoxo": { pass: "xoxo", rank: "Bisnis", divisi: "Family" }
 
 };
