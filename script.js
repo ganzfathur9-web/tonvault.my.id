@@ -3456,3 +3456,28 @@ function checkAndApplyRankChanges() {
         if (typeof showToast === 'function') showToast("RANK UPDATED", `Sistem mendeteksi perubahan: Pangkat Anda kini menjadi ${currentUserRole.toUpperCase()}`, "success");
     }
 }
+
+
+// =====================================================================
+// 🔥 RADAR SINKRONISASI REAL-TIME ROSTER & AKUN ANTAR DEVICE 🔥
+// =====================================================================
+setTimeout(() => {
+    try {
+        let db = (typeof database !== 'undefined') ? database : (typeof firebase !== 'undefined' ? firebase.database() : null);
+        if (db) {
+            // 1. Radar untuk List Roster
+            db.ref('savedProfiles').on('value', (snap) => {
+                window.savedProfiles = snap.val() || {};
+                if (typeof renderTonCatalog === 'function') renderTonCatalog();
+            });
+            
+            // 2. Radar untuk Account Manage
+            db.ref('customAccounts').on('value', (snap) => {
+                window.customAccounts = snap.val() || {};
+                if (typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+            });
+        }
+    } catch(e) { 
+        console.log("Radar Realtime Error:", e); 
+    }
+}, 2500); // Menunggu 2.5 detik agar sistem utama siap
