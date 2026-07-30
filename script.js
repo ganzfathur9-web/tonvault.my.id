@@ -31,10 +31,12 @@ const METAL_SCRAP_WEBHOOK_URL = "https://discord.com/api/webhooks/15304806547965
 // =====================================================================
 const AKUN_MANUAL = {
     "qaz": { pass: "123", rank: "Soldiers", divisi: "Family" },
-    "budi": { pass: "budi123", rank: "Bisnis", divisi: "Family" },
+    "budi": { pass: "budi123", rank: "Bisnis", divisi: "Internal" },
     "rexy": { pass: "rexy11", rank: "Bisnis", divisi: "Internal" },
     "joko": { pass: "joko123", rank: "Associates", divisi: "Family" },
     "memberbaru": { pass: "rahasia", rank: "Soldiers", divisi: "Family" }
+  "xoxo": { pass: "xoxo", rank: "Bisnis", divisi: "Family" }
+
 };
 
 // ---------------------------------------------------------------------
