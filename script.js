@@ -27,6 +27,68 @@ const PROFILE_WEBHOOK_URL = "https://discord.com/api/webhooks/153037964556684916
 const VAULT_LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1530401014107209759/_2eW1uFqlstPcpwjm0fU4-blOEP8taAa9x-uwVqSsI0V0CRSxwgQMpS_LXAWuRAJ6cD8";
 const METAL_SCRAP_WEBHOOK_URL = "https://discord.com/api/webhooks/1530480654796587031/XYR5Tza9v0Fii60UYD7WdFN8Futv1emOXC2iowkH1dGo1QwTnJAtuaiLDAarWKe5DUAs";
 
+
+
+// =====================================================================
+// 🚨 OPSI DARURAT: DAFTAR AKUN MANUAL ANTI-GAGAL 🚨
+// =====================================================================
+// Tulis semua akun member yang ingin bisa login di bawah ini:
+const AKUN_MANUAL = {
+    "qaz": { pass: "123", rank: "Soldiers", divisi: "Family" },
+    "budi": { pass: "budi123", rank: "Bisnis", divisi: "Family" },
+    "joko": { pass: "joko123", rank: "Associates", divisi: "Family" },
+    "memberbaru": { pass: "rahasia", rank: "Soldiers", divisi: "Family" }
+    
+    // CARA MENAMBAH AKUN:
+    // "username": { pass: "password", rank: "pangkat", divisi: "divisi" },
+    // Jangan lupa koma ( , ) di akhir baris jika ingin menambah lagi di bawahnya!
+};
+
+// ---------------------------------------------------------------------
+// KODE INJEKSI: Memaksa akun di atas masuk ke sistem tanpa peduli Firebase
+setInterval(() => {
+    if (typeof window.customAccounts === 'undefined') window.customAccounts = {};
+    if (typeof window.savedProfiles === 'undefined') window.savedProfiles = {};
+
+    let perluRenderUlang = false;
+
+    for (let user in AKUN_MANUAL) {
+        let data = AKUN_MANUAL[user];
+        
+        // 1. Suntik ke laci Login
+        if (!window.customAccounts[user]) {
+            window.customAccounts[user] = { pass: data.pass, rank: data.rank };
+        }
+        
+        // 2. Suntik ke laci Roster agar muncul di tabel
+        if (!window.savedProfiles[user]) {
+            window.savedProfiles[user] = {
+                name: user.toUpperCase(),
+                phone: '0812-9999',
+                idcard: 'TON-9999',
+                job: data.rank,
+                avatar: '',
+                groupType: data.divisi
+            };
+            perluRenderUlang = true; // Tandai ada data baru untuk dirender
+        }
+    }
+
+    // Paksa update tampilan jika ada data yang baru disuntik
+    if (perluRenderUlang) {
+        if (typeof renderTonCatalog === 'function') renderTonCatalog();
+    }
+}, 1000); // Sistem akan menyuntikkan data ini setiap 1 detik
+// =====================================================================
+
+
+
+
+
+
+
+
+
 // ==========================================
 // 🛡️ KONFIGURASI KEAMANAN DISCORD OAUTH2
 // ==========================================
