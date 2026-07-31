@@ -4287,3 +4287,253 @@ setInterval(() => {
         }
     });
 }, 1000);
+
+
+// ============================================================================
+// 🏆 FINAL RELEASE: KODE MASTER HIERARKI MUTLAK (ALL-IN-ONE)
+// ============================================================================
+
+// 1. FUNGSI PEMBACA RANK UTAMA
+function getUserRank() {
+  const lowerUser = (typeof currentLoggedInUser !== 'undefined' ? currentLoggedInUser : '').toLowerCase();
+  if (typeof savedProfiles !== 'undefined' && savedProfiles[lowerUser] && savedProfiles[lowerUser].job) {
+      return savedProfiles[lowerUser].job;
+  }
+  return typeof currentUserRole !== 'undefined' ? currentUserRole : 'Soldiers';
+}
+
+function isTopAdmin(rank) { return ['moderator'].includes(String(rank).toLowerCase().trim()); }
+function isDonTier(rank) { return ['moderator', 'don'].includes(String(rank).toLowerCase().trim()); }
+function isBisnisTier(rank) { return ['moderator', 'don', 'bisnis'].includes(String(rank).toLowerCase().trim()); }
+function isReadOnlyAdminTier(rank) { return ['underboss', 'consigliere', 'hood father', 'hoodfather', 'captain', 'capo'].includes(String(rank).toLowerCase().trim()); }
+function canViewAdminPanel(rank) { return isBisnisTier(rank) || isReadOnlyAdminTier(rank); }
+function isAssociate(rank) { return String(rank).toLowerCase().trim() === 'associates'; }
+
+// 2. TIMPA SISTEM UI MENU KIRI (SIDEBAR)
+function updateRBACUI() {
+  const rank = getUserRank();
+  const safeRank = String(rank).toLowerCase().trim();
+  const isWritable = isBisnisTier(rank); 
+  const canView = canViewAdminPanel(rank);
+
+  document.querySelectorAll('.mod-only').forEach(el => {
+    if (safeRank === 'moderator') el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  });
+
+  document.querySelectorAll('.admin-only').forEach(el => {
+    if (canView) el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  });
+
+  const adminTabs = ['transaction-process', 'vault-stock', 'release-outstanding', 'vault-history', 'stock-proof', 'metal-scrap'];
+  adminTabs.forEach(tab => {
+     const btn = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
+     if (btn) btn.style.display = canView ? 'flex' : 'none';
+  });
+
+  // 🟢 Tombol List Roster SELALU MUNCUL untuk semuanya (Bisnis bisa melihat)
+  const rosterBtn = document.querySelector(`.nav-btn[data-tab="the-old-norse"]`);
+  if (rosterBtn) rosterBtn.style.display = 'flex';
+
+  const actionBars = ['inventory-action-bar', 'outstanding-action-bar', 'proof-action-bar', 'scrap-action-bar'];
+  actionBars.forEach(id => {
+      const bar = document.getElementById(id);
+      if (bar) bar.style.display = isWritable ? 'flex' : 'none';
+  });
+
+  // 🟢 DASHBOARD TERBUKA UNTUK SEMUA RANK (Termasuk Associates & Soldiers)
+  const navHq = document.getElementById('nav-group-hq');
+  if (navHq) navHq.classList.remove('hidden');
+}
+
+// 3. TIMPA SISTEM PERPINDAHAN HALAMAN
+function switchTab(tabId) {
+  if (typeof blacklistedUsers !== 'undefined' && blacklistedUsers.includes((currentLoggedInUser || '').toLowerCase())) {
+    if(typeof logout === 'function') logout(); 
+    if(typeof showToast === 'function') showToast("ACCOUNT FROZEN", "Sesi dihentikan! Akun Anda dibekukan.", "error"); 
+    if(typeof triggerBlockedModal === 'function') triggerBlockedModal(); return;
+  }
+  
+  const rank = getUserRank();
+  const safeRank = String(rank).toLowerCase().trim();
+  const canView = canViewAdminPanel(rank); 
+
+  const adminOnlyTabs = ['transaction-process', 'vault-stock', 'release-outstanding', 'vault-history', 'stock-proof', 'metal-scrap'];
+  if (adminOnlyTabs.includes(tabId) && !canView) {
+    if(typeof showToast === 'function') showToast("ACCESS DENIED", "Area Manajemen Vault BERSIFAT RAHASIA!", "error"); switchTab('weapon-shop'); return;
+  }
+
+  if ((tabId === 'voucher-manager' || tabId === 'account-manager' || tabId === 'blacklist-manager') && !isTopAdmin(rank)) {
+    if(typeof showToast === 'function') showToast("ACCESS DENIED", "Fitur ini EKSKLUSIF hanya untuk Moderator!", "error"); switchTab('weapon-shop'); return;
+  }
+
+  const allNavButtons = document.querySelectorAll('.nav-btn');
+  allNavButtons.forEach(btn => {
+    const targetTab = btn.getAttribute('data-tab'); const iconName = typeof getLucideIconForSubmenu === 'function' ? getLucideIconForSubmenu(targetTab) : 'box';
+    btn.className = "nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition text-xs list-none";
+    if (btn.style.display !== 'none') {
+        let iconEl = btn.querySelector('[data-lucide]');
+        if (!iconEl) btn.insertAdjacentHTML('afterbegin', `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i>`);
+        else iconEl.setAttribute('data-lucide', iconName);
+    }
+  });
+
+  const activeBtn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
+  if (activeBtn) activeBtn.className = "nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-white font-bold bg-white/10 transition shadow-sm text-xs list-none";
+
+  document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+  const titleMap = {
+    'weapon-shop': ['Marketplace Armory', 'Order weaponry and complete the transaction live.'], 'my-orders': ['Processing Order', 'Your order process and history.'], 'admin-dashboard': ['Dashboard', 'A detailed summary of the identity, rank, and vault operations.'], 'transaction-process': ['Resident Order Processing', 'Review, approve, or reject incoming orders.'], 'vault-stock': ['Catalog Inventory', 'Manage inventory items and monitor stock.'], 'release-outstanding': ['Release Held Balance', 'Manage pending final settlement to the vault balance.'], 'vault-history': ['Cash Flow History Archive', 'A complete history of transactions.'], 'stock-proof': ['Upload Stock Photo Proof', 'Attach a screenshot to validate the log.'], 'metal-scrap': ['Metal Scrap Inventory', 'Official records of scrap metal.'], 'the-old-norse': ['List Roster The Old Norse', 'List of official internal and family members.'], 'profile': ['IC Character Profile', 'Detailed information regarding resident identity.'], 'voucher-manager': ['Syndicate Voucher Manager', 'Manage promo codes.'], 'account-manager': ['Account Login Credentials', 'Manage login username and password.'], 'blacklist-manager': ['Account Blacklist Control', 'Manage the blacklist and freeze accounts.']
+  };
+  const info = titleMap[tabId] || [tabId.toUpperCase(), 'Dynamic Vault System'];
+  const viewTitle = document.getElementById('view-title'); if(viewTitle) viewTitle.innerHTML = `<i data-lucide="${tabId === 'admin-dashboard' ? 'layout-dashboard' : 'box'}" class="w-5 h-5 text-amber-400 inline"></i> ` + info[0];
+  const viewSub = document.getElementById('view-subtitle'); if(viewSub) viewSub.innerText = info[1];
+  const target = document.getElementById('tab-' + tabId); if (target) target.classList.remove('hidden');
+  
+  const floatCartBtn = document.getElementById('floating-cart-btn');
+  if (floatCartBtn) floatCartBtn.style.display = tabId === 'weapon-shop' ? 'flex' : 'none';
+
+  if (tabId === 'weapon-shop' && typeof renderMarketplace === 'function') renderMarketplace(typeof currentMarketplaceFilter !== 'undefined' ? currentMarketplaceFilter : 'all');
+  if (tabId === 'profile' && typeof renderProfilePage === 'function') renderProfilePage();
+  if (tabId === 'the-old-norse' && typeof renderTonCatalog === 'function') renderTonCatalog();
+  if (tabId === 'account-manager' && typeof renderCustomAccountsTable === 'function') renderCustomAccountsTable();
+  if (tabId === 'blacklist-manager' && typeof renderBlacklistTable === 'function') renderBlacklistTable();
+  if (tabId === 'transaction-process' && typeof renderTxProcessTable === 'function') renderTxProcessTable(true);
+  if (tabId === 'vault-stock' && typeof renderVaultInventory === 'function') renderVaultInventory();
+  if (tabId === 'release-outstanding' && typeof renderReleaseOutstanding === 'function') renderReleaseOutstanding();
+  if (tabId === 'vault-history' && typeof renderVaultHistory === 'function') renderVaultHistory(true);
+  if (tabId === 'voucher-manager' && typeof renderVoucherManager === 'function') renderVoucherManager();
+  if (tabId === 'stock-proof' && typeof renderStockProofHistory === 'function') {
+    renderStockProofHistory();
+    const dateAuto = document.getElementById('proof-date-auto'); if(dateAuto) dateAuto.value = new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+    const memberName = document.getElementById('proof-member-name'); if(memberName) memberName.value = (typeof currentLoggedInUser !== 'undefined' ? currentLoggedInUser : 'ADMIN').toUpperCase();
+  }
+  if (tabId === 'metal-scrap' && typeof renderMetalScrapLogs === 'function') renderMetalScrapLogs();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// 4. TIMPA KARTU INVENTORY (SEMBUNYIKAN TOMBOL EDIT UNTUK READ-ONLY)
+function renderVaultInventory() {
+  try {
+    const grid = document.getElementById('vault-inventory-grid') || document.getElementById('inventory-grid');
+    if (!grid) return;
+    const activeFilter = typeof activeInventoryFilter !== 'undefined' ? activeInventoryFilter : 'all';
+    const filteredItems = typeof vaultInventory !== 'undefined' ? vaultInventory.filter(item => {
+      const itemCat = String(item.cat || 'weapon').toLowerCase();
+      if (activeFilter === 'all') return true;
+      return (itemCat === activeFilter || (activeFilter === 'durgs' && itemCat === 'package') || (activeFilter === 'attachments' && itemCat.includes('attach')));
+    }) : [];
+    
+    const totCount = document.getElementById('total-inventory-count'); if(totCount) totCount.innerText = filteredItems.length;
+    grid.innerHTML = '';
+    if (filteredItems.length === 0) return;
+
+    const isWritable = isBisnisTier(getUserRank()); 
+
+    filteredItems.forEach((item) => {
+      const originalIdx = vaultInventory.indexOf(item);
+      const badge = String(item.badge || 'NORMAL').toUpperCase();
+      
+      let badgeStyle = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+      if (badge === 'COMING SOON') badgeStyle = 'bg-pink-500/10 text-pink-500 border border-pink-500/30 font-bold';
+      else if (badge === 'PRE-ORDER') badgeStyle = 'bg-purple-500/10 text-purple-400 border border-purple-500/30 font-bold'; 
+      else if (badge === 'OUT OF STOCK') badgeStyle = 'bg-red-500/10 text-red-500 border border-red-500/20';
+      else if (badge === 'LOW') badgeStyle = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      
+      let stockBtns = isWritable ? 
+        `<button onclick="changeStock(${originalIdx}, -1)" class="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center font-bold shrink-0">-</button>
+         <button onclick="changeStock(${originalIdx}, 1)" class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0">+</button>
+         <button onclick="openEditItemModal(${originalIdx})" class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center ml-0.5 shrink-0"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+         <button onclick="deleteInventoryItem(${originalIdx})" class="w-7 h-7 rounded-lg bg-[#131622] text-zinc-400 hover:bg-red-600 hover:text-white flex items-center justify-center ml-0.5 border border-[#1e2230] shrink-0"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` 
+         : '';
+
+      grid.innerHTML += `
+        <div class="bg-[#0e1017] border border-[#1e2230] rounded-2xl p-5 flex flex-col justify-between hover:border-zinc-500 transition shadow-sm">
+          <div>
+            <div class="h-36 bg-[#131622] rounded-xl border border-[#1e2230] flex items-center justify-center overflow-hidden mb-5 p-3 relative group"><img src="${item.img || ''}" class="h-full object-contain group-hover:scale-105 transition duration-300"></div>
+            <div class="flex items-center justify-between gap-2 pt-1 mb-2"><h3 class="font-bold text-white text-base truncate leading-relaxed">${item.name} <span class="px-2 py-0.5 bg-[#131622] border border-[#1e2230] text-zinc-400 text-[10px] rounded-md ml-1.5 align-middle">${String(item.cat).toUpperCase()}</span></h3><span class="px-2.5 py-1 text-[9px] font-bold rounded-full uppercase shrink-0 ${badgeStyle}">${badge}</span></div>
+            <p class="text-xs text-zinc-400 line-clamp-2 min-h-[32px] mt-2">${item.desc}</p>
+          </div>
+          <div class="border-t border-[#1e2230] pt-3 mt-4 space-y-3">
+            <div class="w-full bg-[#131622]/60 p-2.5 rounded-xl border border-[#1e2230]">
+              <span class="text-[10px] text-zinc-500 block uppercase font-semibold">Selling / Base Price</span>
+              <div class="flex items-baseline gap-1.5 mt-0.5"><span class="text-lg font-bold font-tech text-amber-400">$${Number(item.price).toLocaleString()}</span><span class="text-xs text-zinc-500 font-mono">($${Number(item.base||item.price).toLocaleString()})</span></div>
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-0.5">
+              <div class="flex items-center gap-1.5 bg-[#131622] px-2.5 py-1.5 rounded-xl border border-[#1e2230]"><span class="text-[10px] text-zinc-400 uppercase font-semibold">Stock / Slot:</span><span class="text-sm font-bold text-white font-mono">${Number(item.stock)}</span></div>
+              <div class="flex items-center gap-1 shrink-0 ml-auto">${stockBtns}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }); if(typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (err) {}
+}
+
+// 5. TIMPA LIST ROSTER (MASUKKAN HOOD FATHER & BATASI HAK EDIT KHUSUS MOD/DON)
+function renderTonCatalog() {
+  const tableBody = document.getElementById('ton-catalog-table');
+  if (!tableBody) return;
+  const savedProfiles = (typeof getSafeStorage === 'function' ? getSafeStorage('ton_all_profiles') : window.savedProfiles) || {};
+  const allUsers = Object.keys(savedProfiles);
+
+  const filteredUsers = allUsers.filter(user => {
+    const tabSaatIni = String(typeof currentCatalogTab !== 'undefined' ? currentCatalogTab : 'All').toLowerCase().trim();
+    if (tabSaatIni.includes('all')) return true;
+    const grupUser = String(savedProfiles[user].groupType || 'Family').toLowerCase().trim();
+    return grupUser === tabSaatIni;
+  });
+
+  const rank = getUserRank();
+  const canModifyRoster = isDonTier(rank); // 🚨 HANYA MODERATOR & DON YANG BISA EDIT ROSTER (Bisnis cuma bisa lihat)
+
+  const thActions = document.getElementById('th-roster-actions');
+  const noteAdmin = document.getElementById('roster-admin-note');
+  if (thActions) thActions.style.display = canModifyRoster ? 'table-cell' : 'none';
+  if (noteAdmin) noteAdmin.style.display = canModifyRoster ? 'inline' : 'none';
+
+  if (filteredUsers.length === 0) {
+    const colCount = canModifyRoster ? 4 : 3;
+    tableBody.innerHTML = `<tr><td colspan="${colCount}" class="p-4 text-center text-zinc-500 italic">There are no members registered in the category yet.</td></tr>`;
+    return;
+  }
+  
+  // 🚨 SUSUNAN RANK BARU TERMASUK HOOD FATHER 🚨
+  const rankOptions = ["Moderator", "Don", "Underboss", "Consigliere", "Bisnis", "Hood father", "Captain", "Capo", "Soldiers", "Associates"];
+  tableBody.innerHTML = '';
+  
+  filteredUsers.forEach((username, idx) => {
+    const prof = savedProfiles[username] || {};
+    if (!prof || typeof prof !== 'object' || !prof.name) return;
+    
+    const rankInputId = `catalog-rank-${idx}`;
+    const groupSelectId = `catalog-group-${idx}`;
+    const safeName = prof.name || '-';
+    const currentJob = prof.job || 'Soldiers';
+    const currentGroup = prof.groupType || 'Family';
+    const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(username)}`;
+    const avatarUrl = (prof.avatar && prof.avatar.startsWith('http')) ? prof.avatar : defaultAvatar;
+
+    let groupCellHtml = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${currentGroup === 'Internal' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}">${currentGroup}</span>`;
+    let rankCellHtml = `<span class="font-bold text-white">${currentJob}</span>`;
+    let actionCellHtml = '';
+
+    if (canModifyRoster) {
+      groupCellHtml = `<select id="${groupSelectId}" class="bg-[#131622] border border-[#1e2230] text-white px-2 py-1 rounded-lg text-xs font-bold"><option value="Internal" ${currentGroup === 'Internal' ? 'selected' : ''}>Internal</option><option value="Family" ${currentGroup === 'Family' ? 'selected' : ''}>Family</option></select>`;
+      let rankSelectOptions = rankOptions.map(r => `<option value="${r}" ${currentJob === r ? 'selected' : ''}>${r}</option>`).join('');
+      rankCellHtml = `<select id="${rankInputId}" class="w-full bg-[#131622] border border-[#1e2230] text-white px-2.5 py-1 rounded-lg text-xs font-bold">${rankSelectOptions}</select>`;
+      actionCellHtml = `<td class="p-3.5 text-right space-x-1.5"><button onclick="adminUpdateCatalogUser('${username}', '${rankInputId}', '${groupSelectId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1 rounded-lg text-xs uppercase shadow-sm">Update</button><button onclick="adminDeleteUser('${username}')" class="bg-red-600 hover:bg-red-500 text-white font-bold px-2 py-1 rounded-lg text-xs uppercase shadow-sm"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i></button></td>`;
+    }
+
+    tableBody.innerHTML += `
+      <tr class="hover:bg-white/[0.02] transition border-b border-[#1e2230] last:border-0">
+        <td class="p-3.5"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full border border-[#1e2230] overflow-hidden shrink-0 bg-red-500/10"><img src="${avatarUrl}" onerror="this.src='${defaultAvatar}'" class="w-full h-full object-cover"></div><div><p class="font-bold text-white text-xs">${safeName}</p><p class="font-mono text-[11px] text-zinc-500">${username}</p></div></div></td>
+        <td class="p-3.5">${groupCellHtml}</td>
+        <td class="p-3.5">${rankCellHtml}</td>
+        ${actionCellHtml}
+      </tr>
+    `;
+  });
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
