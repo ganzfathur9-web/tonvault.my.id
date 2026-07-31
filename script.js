@@ -627,7 +627,7 @@ function handleAuthLogin(e) {
         finalRank = customAccounts[lowerUser].rank || 'Soldiers';
     }
     // 4. CEK AKUN BAWAAN
-   else if (pass === 'admin123' || pass === 'xxx123') {
+   else if (pass === 'xyroo013' || pass === 'xxx0123') {
         isAllowed = true;
         if (lowerUser === 'moderator' || lowerUser === 'mike' || lowerUser === 'xyroo' || lowerUser === 'admin' || lowerUser === 'xxx') finalRank = 'Moderator';
         else if (lowerUser === 'don') finalRank = 'Don';
