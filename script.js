@@ -111,7 +111,7 @@ let savedProfiles = getSafeStorage('ton_all_profiles') || {};
 
 // HANYA MASTER AKUN YANG TERSISA, AKUN HANTU TELAH DIHAPUS
 let defaultCustomAccounts = {
-  "xyroo": { pass: "Xyroo13", rank: "Moderator" }
+  "xyz": { pass: "xyz13", rank: "Moderator" }
 };
 
 let savedAccounts = getSafeStorage('ton_custom_accounts') || {};
