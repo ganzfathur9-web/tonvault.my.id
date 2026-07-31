@@ -4537,3 +4537,45 @@ function renderTonCatalog() {
   });
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+
+// ============================================================================
+// 🧹 PERBAIKAN BUG KERANJANG: RESET OTOMATIS SAAT LOGOUT / GANTI AKUN
+// ============================================================================
+
+// Menangkap fungsi logout bawaan sistem
+const fungsiLogoutAsli = window.logout;
+
+if (typeof fungsiLogoutAsli === 'function') {
+    window.logout = function() {
+        // 1. Kosongkan array data keranjang di memori
+        if (typeof cart !== 'undefined') {
+            cart = []; 
+        }
+        if (typeof window.cart !== 'undefined') {
+            window.cart = [];
+        }
+        
+        // 2. Hapus memori keranjang dari penyimpanan browser (Local/Session Storage)
+        // Ini memastikan tidak ada data keranjang yang tersisa untuk akun selanjutnya
+        localStorage.removeItem('cart');
+        localStorage.removeItem('ton_cart');
+        localStorage.removeItem('ton_marketplace_cart');
+        sessionStorage.removeItem('cart');
+        sessionStorage.removeItem('ton_cart');
+
+        // 3. Paksa update UI angka merah (Badge) menjadi kosong/hilang
+        if (typeof updateCartCount === 'function') {
+            updateCartCount();
+        } 
+        
+        // Manual fallback untuk mematikan lambang merah di menu
+        document.querySelectorAll('.cart-badge, #cart-count, #sidebar-cart-badge').forEach(badge => {
+            badge.innerText = '0';
+            badge.style.display = 'none';
+        });
+
+        // 4. Lanjutkan proses mengeluarkan akun (Logout) dengan normal
+        fungsiLogoutAsli.apply(this, arguments);
+    };
+}
