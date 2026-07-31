@@ -4270,3 +4270,20 @@ function renderTonCatalog() {
   });
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+// ============================================================================
+// 💉 INJEKSI RANK CAPO: MENGEMBALIKAN CAPO KE MENU DROPDOWN
+// ============================================================================
+setInterval(() => {
+    document.querySelectorAll('select').forEach(select => {
+        // Cek apakah dropdown ini memiliki opsi Captain
+        const optCaptain = select.querySelector('option[value="Captain"]') || select.querySelector('option[value="captain"]');
+        // Cek apakah Capo sudah ada atau belum
+        const optCapo = select.querySelector('option[value="Capo"]') || select.querySelector('option[value="capo"]');
+        
+        // Jika ada opsi Captain tapi Capo hilang, sisipkan Capo tepat di bawahnya!
+        if (optCaptain && !optCapo) {
+            optCaptain.insertAdjacentHTML('afterend', '<option value="Capo">Capo</option>');
+        }
+    });
+}, 1000);
