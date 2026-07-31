@@ -20,11 +20,11 @@ try {
   console.warn("⚠️ FIREBASE ERROR: Menggunakan penyimpanan lokal.");
 }
 
-const LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1530339697950457896/tJ0pI8L0aA1_eGQalIYceUoQ1OLNgik_60Dbk22JB2w0DtsT2hdeL4Z5bmZcnfbHfL0c";
-const ORDERS_WEBHOOK_URL = "https://discord.com/api/webhooks/1530340024275701870/pjcRbUAF5Gfx6VCHLvwaQgap01G5Skwye7QHRkpEemSrtVNsXxvq9Rr8HN_3mGwvpRXU";
-const PROFILE_WEBHOOK_URL = "https://discord.com/api/webhooks/1530379645566849167/5k91siHoYLf_ab232QC-AeJnG2SCj_qeQEqhUhYPpHZLQPneW8sTUm0RxSt8H0th5VU7";
-const VAULT_LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1530401014107209759/_2eW1uFqlstPcpwjm0fU4-blOEP8taAa9x-uwVqSsI0V0CRSxwgQMpS_LXAWuRAJ6cD8";
-const METAL_SCRAP_WEBHOOK_URL = "https://discord.com/api/webhooks/1530480654796587031/XYR5Tza9v0Fii60UYD7WdFN8Futv1emOXC2iowkH1dGo1QwTnJAtuaiLDAarWKe5DUAs";
+const LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1532559618579103938/inZhoEWpyoW8xJ8HwtIvNQTyWGRNWelzRz9OI2spNtOMr2_nG11Nc1LPpr1-YwrdNxAk";
+const ORDERS_WEBHOOK_URL = "https://discord.com/api/webhooks/1532559228223619102/8lnxdI_V5rIwQ0L3paWTUKuAbB4Ty-Qwy0fbDmZKUP-qNFXWxaPQMfYftsbyE5zqVbP3";
+const PROFILE_WEBHOOK_URL = "https://discord.com/api/webhooks/1532561498159976651/T_Sp0q6povwP3ch2f9y__gmWgdWpUJ2GRCSTdcAYLj8zPk3s-L_LVF63OCzOVJF9_Y8N";
+const VAULT_LOGS_WEBHOOK_URL = "https://discord.com/api/webhooks/1532561688002428988/Y2_uA_BIu-9aAV347DghjYR6LFIRk-oZqL7ttbZ0Z2yYxTGyUo-U5HMGCRu6bnywAr9B";
+const METAL_SCRAP_WEBHOOK_URL = "https://discord.com/api/webhooks/1532561842017403001/ZznknpZrbb780buFdqIOA9aSRi6TIAFoQpX-S1aacmZcTyd0j53IXkWPo8U5WgjZBqNO";
 
 // =====================================================================
 // 🚨 OPSI DARURAT: DAFTAR AKUN MANUAL ANTI-GAGAL 🚨
