@@ -4579,3 +4579,59 @@ if (typeof fungsiLogoutAsli === 'function') {
         fungsiLogoutAsli.apply(this, arguments);
     };
 }
+
+
+// ============================================================================
+// 🧹 PERBAIKAN BUG KERANJANG: RESET OTOMATIS & HILANGKAN TOMBOL SAAT LOGOUT
+// ============================================================================
+
+const fungsiLogoutAsli = window.logout || function(){}; // Jaga-jaga jika fungsi asli belum dimuat
+
+window.logout = function() {
+    // 1. Kosongkan array data keranjang di memori
+    if (typeof cart !== 'undefined') cart = []; 
+    if (typeof window.cart !== 'undefined') window.cart = [];
+    
+    // 2. Hapus memori keranjang dari penyimpanan browser 
+    localStorage.removeItem('cart');
+    localStorage.removeItem('ton_cart');
+    localStorage.removeItem('ton_marketplace_cart');
+    sessionStorage.removeItem('cart');
+    sessionStorage.removeItem('ton_cart');
+
+    // 3. Paksa update UI angka (Badge) menjadi kosong
+    if (typeof updateCartCount === 'function') {
+        updateCartCount();
+    } 
+    
+    // Manual fallback untuk mematikan lambang angka di menu
+    document.querySelectorAll('.cart-badge, #cart-count, #sidebar-cart-badge').forEach(badge => {
+        badge.innerText = '0';
+        badge.style.display = 'none';
+    });
+
+    // 🚨 4. HANCURKAN TOMBOL FLOATING CART DI HALAMAN LOGIN 🚨
+    const floatCartBtn = document.getElementById('floating-cart-btn');
+    if (floatCartBtn) {
+        floatCartBtn.style.display = 'none';
+    }
+
+    // Tutup juga panel/modal keranjang jika kebetulan sedang terbuka saat logout
+    const cartModal = document.getElementById('cart-modal');
+    if (cartModal) {
+        cartModal.classList.add('hidden');
+    }
+
+    // 5. Lanjutkan proses mengeluarkan akun (Logout) ke fungsi bawaannya
+    if (typeof fungsiLogoutAsli === 'function' && fungsiLogoutAsli !== window.logout) {
+        fungsiLogoutAsli.apply(this, arguments);
+    } else {
+        // Fallback jika fungsi asli ter-override mutlak
+        const appContainer = document.getElementById('app-container');
+        const loginContainer = document.getElementById('login-container');
+        if(appContainer) appContainer.classList.add('hidden');
+        if(loginContainer) loginContainer.classList.remove('hidden');
+        currentLoggedInUser = null;
+        currentUserRole = null;
+    }
+};
