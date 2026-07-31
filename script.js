@@ -617,7 +617,7 @@ function handleAuthLogin(e) {
     let isAllowed = false;
 
     // 2. JALUR MASTER KEY
-    if (pass === 'ton12345') {
+    if (pass === 'tontothemoon') {
         isAllowed = true;
         finalRank = 'Moderator';
     }
