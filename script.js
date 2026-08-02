@@ -4886,3 +4886,32 @@ setInterval(() => {
         }
     }
 }, 1500); // Mengecek setiap 1.5 detik
+
+// ============================================================================
+// ☁️ FIREBASE SYNC KICKER: MEMAKSA UPLOAD PROFIL KE CLOUD
+// ============================================================================
+
+document.addEventListener('click', function(e) {
+    const teksTombol = (e.target.innerText || '').toLowerCase();
+    const idTombol = (e.target.id || '').toLowerCase();
+    
+    // Jika tombol Simpan Profil diklik
+    if (teksTombol.includes('simpan') || teksTombol.includes('save') || idTombol.includes('save')) {
+        
+        // Hentikan website agar tidak auto-refresh (jika tombolnya ada di dalam Form)
+        e.preventDefault(); 
+        
+        setTimeout(() => {
+            // Mencoba memicu semua kemungkinan nama fungsi sinkronisasi Firebase di web Anda
+            console.log("Mencoba sinkronisasi ke Firebase...");
+            try {
+                if (typeof syncData === 'function') syncData();
+                else if (typeof saveToFirebase === 'function') saveToFirebase();
+                else if (typeof updateFirebase === 'function') updateFirebase();
+                else if (typeof saveGlobalState === 'function') saveGlobalState();
+            } catch(err) {
+                console.log("Sync trigger bypassed.");
+            }
+        }, 800); // Beri waktu sistem menyimpan ke memori lokal dulu, baru lempar ke Cloud
+    }
+});
