@@ -4786,3 +4786,72 @@ setInterval(() => {
         });
     }
 }, 1000); // Robot pengawas berjalan setiap 1 detik mengunci UI secara otomatis
+
+// ============================================================================
+// 🛡️ DATA GUARDIAN: PROTEKSI MUTLAK FOTO & NAMA PROFIL (ANTI-RESET)
+// ============================================================================
+
+(function() {
+    // 1. Mencegat sistem saat mencoba menyimpan ke Local Storage
+    const fungsiSetItemAsli = localStorage.setItem;
+    
+    localStorage.setItem = function(key, value) {
+        if (key === 'ton_all_profiles') {
+            try {
+                const dataBaruDiterima = JSON.parse(value);
+                const dataLamaDiBrankas = JSON.parse(localStorage.getItem('ton_all_profiles') || '{}');
+                
+                // 2. Jaga agar properti 'avatar' dan 'name' tidak dihilangkan oleh sistem bawaan
+                for (const username in dataBaruDiterima) {
+                    if (dataLamaDiBrankas[username]) {
+                        // Jika di brankas ada foto tapi di data baru mau dihapus, masukkan kembali fotonya!
+                        if (dataLamaDiBrankas[username].avatar && !dataBaruDiterima[username].avatar) {
+                            dataBaruDiterima[username].avatar = dataLamaDiBrankas[username].avatar;
+                        }
+                        // Lakukan hal yang sama untuk nama IC
+                        if (dataLamaDiBrankas[username].name && !dataBaruDiterima[username].name) {
+                            dataBaruDiterima[username].name = dataLamaDiBrankas[username].name;
+                        }
+                    }
+                }
+                
+                // 3. Timpa nilai yang akan disave dengan data yang sudah diselamatkan
+                value = JSON.stringify(dataBaruDiterima);
+                
+                // Sinkronisasi ke sistem bawaan
+                if (typeof window.savedProfiles !== 'undefined') {
+                    window.savedProfiles = dataBaruDiterima;
+                }
+            } catch(e) {
+                console.error("Guardian Error:", e);
+            }
+        }
+        // Lanjutkan proses penyimpanan ke memori browser
+        fungsiSetItemAsli.apply(this, arguments);
+    };
+})();
+
+// ============================================================================
+// 🔄 AUTO-REFRESH UI: MEMAKSA FOTO MUNCUL DI MENU SAMPING SAAT LOGIN
+// ============================================================================
+
+setInterval(() => {
+    if (typeof currentLoggedInUser !== 'undefined' && currentLoggedInUser) {
+        const brankas = JSON.parse(localStorage.getItem('ton_all_profiles') || '{}');
+        const profilSaya = brankas[currentLoggedInUser.toLowerCase()];
+        
+        if (profilSaya) {
+            const sidebarAvatar = document.querySelector('.sidebar-user-avatar, #sidebar-user-avatar, #user-avatar-display') || document.querySelector('.w-10.h-10.rounded-full img');
+            const sidebarName = document.querySelector('.sidebar-user-name, #sidebar-user-name, #user-name-display') || document.querySelector('div.font-bold.text-white.text-sm');
+            
+            // Paksa ganti foto jika foto di layar berbeda dengan foto di brankas
+            if (sidebarAvatar && profilSaya.avatar && sidebarAvatar.src !== profilSaya.avatar) {
+                sidebarAvatar.src = profilSaya.avatar;
+            }
+            // Paksa ganti nama
+            if (sidebarName && profilSaya.name && sidebarName.innerText !== profilSaya.name.toUpperCase()) {
+                sidebarName.innerText = profilSaya.name.toUpperCase();
+            }
+        }
+    }
+}, 1500); // Mengecek setiap 1.5 detik
