@@ -4664,3 +4664,77 @@ setInterval(() => {
         }
     }
 }, 2000);
+
+// ============================================================================
+// 💾 BUG FIX: SIMPAN & LOAD PROFILE IC PER-AKUN (ANTI RESET)
+// ============================================================================
+
+// 1. Mencegat fungsi Buka Profil agar selalu menarik data terbaru dari akun terkait
+const fungsiRenderProfilAsli = window.renderProfilePage || function(){};
+window.renderProfilePage = function() {
+    // Jalankan fungsi aslinya terlebih dahulu
+    fungsiRenderProfilAsli.apply(this, arguments);
+
+    setTimeout(() => {
+        if (typeof currentLoggedInUser === 'undefined' || !currentLoggedInUser) return;
+        const lowerUser = currentLoggedInUser.toLowerCase();
+        
+        // Ambil data khusus untuk akun yang sedang login dari brankas Local Storage
+        const memoriBrankas = JSON.parse(localStorage.getItem('ton_all_profiles') || '{}');
+        if (typeof window.savedProfiles !== 'undefined') {
+            window.savedProfiles = Object.assign(window.savedProfiles, memoriBrankas);
+        } else {
+            window.savedProfiles = memoriBrankas;
+        }
+
+        const profilSaya = window.savedProfiles[lowerUser] || {};
+
+        // Cari kotak isian di layar (Sistem akan otomatis mencari input nama & foto)
+        const nameInputs = document.querySelectorAll('input[id*="name"], input[placeholder*="Name"], input[placeholder*="nama"]');
+        const avatarInputs = document.querySelectorAll('input[id*="avatar"], input[id*="photo"], input[placeholder*="URL"]');
+        const avatarPreview = document.querySelector('img[id*="preview"], img[id*="avatar"]');
+
+        // Isi kembali kotak-kotak tersebut dengan data dari brankas
+        if (nameInputs.length > 0 && profilSaya.name) nameInputs[0].value = profilSaya.name;
+        if (avatarInputs.length > 0 && profilSaya.avatar) avatarInputs[0].value = profilSaya.avatar;
+        
+        // Tampilkan ulang fotonya di layar (jika ada gambar preview)
+        if (avatarPreview && profilSaya.avatar && profilSaya.avatar.trim() !== '') {
+            avatarPreview.src = profilSaya.avatar;
+        }
+    }, 150); // Jeda sejenak agar elemen halamannya selesai dimuat
+};
+
+// 2. Robot Pemantau: Memaksa penyimpanan spesifik ke akun setiap kali tombol Save ditekan
+document.addEventListener('click', function(e) {
+    const teksTombol = (e.target.innerText || '').toLowerCase();
+    const idTombol = (e.target.id || '').toLowerCase();
+    
+    // Jika tombol yang ditekan berhubungan dengan "Simpan" atau "Update" di halaman Profil
+    if (teksTombol.includes('save') || teksTombol.includes('update profile') || idTombol.includes('save-profile')) {
+        
+        setTimeout(() => {
+            if (typeof currentLoggedInUser === 'undefined' || !currentLoggedInUser) return;
+            const lowerUser = currentLoggedInUser.toLowerCase();
+            
+            if (typeof window.savedProfiles === 'undefined') window.savedProfiles = {};
+            if (!window.savedProfiles[lowerUser]) window.savedProfiles[lowerUser] = {};
+            
+            const nameInputs = document.querySelectorAll('input[id*="name"], input[placeholder*="Name"], input[placeholder*="nama"]');
+            const avatarInputs = document.querySelectorAll('input[id*="avatar"], input[id*="photo"], input[placeholder*="URL"]');
+            
+            // Tangkap isi kotak isiannya
+            if (nameInputs.length > 0 && nameInputs[0].value) {
+                window.savedProfiles[lowerUser].name = nameInputs[0].value;
+            }
+            if (avatarInputs.length > 0 && avatarInputs[0].value) {
+                window.savedProfiles[lowerUser].avatar = avatarInputs[0].value;
+            }
+            
+            // Kunci permanen ke Local Storage milik akun tersebut
+            localStorage.setItem('ton_all_profiles', JSON.stringify(window.savedProfiles));
+            
+            if(typeof showToast === 'function') showToast("PROFILE LOCKED", "Data IC berhasil dikunci pada memori browser.", "success");
+        }, 500); // Beri jeda agar fungsi save aslinya berjalan duluan
+    }
+});
