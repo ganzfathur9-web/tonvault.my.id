@@ -4647,94 +4647,90 @@ window.logout = function() {
 
 
 // ============================================================================
-// 💾 FIX PERSISTENSI DATA: MENGUNCI PROFILE IC KE LOCAL STORAGE
+// 💾 KODE MASTER PROFIL IC: OVERRIDE TOTAL (ANTI-AMNESIA & MULTI-AKUN)
 // ============================================================================
 
-// Memantau variabel savedProfiles secara berkala dan memaksa browser 
-// menyimpannya ke memori permanen (Local Storage) jika ada perubahan/penambahan foto.
-
-setInterval(() => {
-    if (typeof savedProfiles !== 'undefined' && Object.keys(savedProfiles).length > 0) {
-        const memoriPermanen = localStorage.getItem('ton_all_profiles');
-        const memoriSementara = JSON.stringify(savedProfiles);
-        
-        // Jika terdeteksi ada data profil yang baru diedit namun belum terkunci, paksa simpan!
-        if (memoriPermanen !== memoriSementara) {
-            localStorage.setItem('ton_all_profiles', memoriSementara);
-        }
+window.saveProfile = function(event) {
+    if (event) event.preventDefault();
+    if (typeof currentLoggedInUser === 'undefined' || !currentLoggedInUser) return;
+    
+    const lowerUser = currentLoggedInUser.toLowerCase();
+    const tabProfile = document.getElementById('tab-profile');
+    if (!tabProfile) return;
+    
+    // Cari semua input teks di halaman profil
+    const inputs = tabProfile.querySelectorAll('input[type="text"], input[type="url"]');
+    const nameInput = document.getElementById('profile-name') || inputs[0];
+    const avatarInput = document.getElementById('profile-avatar') || inputs[1];
+    
+    // Panggil brankas LAMA agar data akun lain tidak terhapus
+    let brankas = JSON.parse(localStorage.getItem('ton_all_profiles') || '{}');
+    
+    // Pastikan slot untuk akun ini tersedia
+    if (!brankas[lowerUser]) {
+        brankas[lowerUser] = { job: (typeof currentUserRole !== 'undefined' ? currentUserRole : 'Soldiers') };
     }
-}, 2000);
-
-// ============================================================================
-// 💾 BUG FIX: SIMPAN & LOAD PROFILE IC PER-AKUN (ANTI RESET)
-// ============================================================================
-
-// 1. Mencegat fungsi Buka Profil agar selalu menarik data terbaru dari akun terkait
-const fungsiRenderProfilAsli = window.renderProfilePage || function(){};
-window.renderProfilePage = function() {
-    // Jalankan fungsi aslinya terlebih dahulu
-    fungsiRenderProfilAsli.apply(this, arguments);
-
-    setTimeout(() => {
-        if (typeof currentLoggedInUser === 'undefined' || !currentLoggedInUser) return;
-        const lowerUser = currentLoggedInUser.toLowerCase();
-        
-        // Ambil data khusus untuk akun yang sedang login dari brankas Local Storage
-        const memoriBrankas = JSON.parse(localStorage.getItem('ton_all_profiles') || '{}');
-        if (typeof window.savedProfiles !== 'undefined') {
-            window.savedProfiles = Object.assign(window.savedProfiles, memoriBrankas);
-        } else {
-            window.savedProfiles = memoriBrankas;
-        }
-
-        const profilSaya = window.savedProfiles[lowerUser] || {};
-
-        // Cari kotak isian di layar (Sistem akan otomatis mencari input nama & foto)
-        const nameInputs = document.querySelectorAll('input[id*="name"], input[placeholder*="Name"], input[placeholder*="nama"]');
-        const avatarInputs = document.querySelectorAll('input[id*="avatar"], input[id*="photo"], input[placeholder*="URL"]');
-        const avatarPreview = document.querySelector('img[id*="preview"], img[id*="avatar"]');
-
-        // Isi kembali kotak-kotak tersebut dengan data dari brankas
-        if (nameInputs.length > 0 && profilSaya.name) nameInputs[0].value = profilSaya.name;
-        if (avatarInputs.length > 0 && profilSaya.avatar) avatarInputs[0].value = profilSaya.avatar;
-        
-        // Tampilkan ulang fotonya di layar (jika ada gambar preview)
-        if (avatarPreview && profilSaya.avatar && profilSaya.avatar.trim() !== '') {
-            avatarPreview.src = profilSaya.avatar;
-        }
-    }, 150); // Jeda sejenak agar elemen halamannya selesai dimuat
+    
+    // Perbarui HANYA data milik akun ini
+    if (nameInput && nameInput.value.trim() !== '') brankas[lowerUser].name = nameInput.value;
+    if (avatarInput && avatarInput.value.trim() !== '') brankas[lowerUser].avatar = avatarInput.value;
+    
+    // KUNCI KEMBALI KE BRANKAS BROWSER
+    localStorage.setItem('ton_all_profiles', JSON.stringify(brankas));
+    window.savedProfiles = brankas; // Sinkronisasi ke variabel global
+    
+    // Munculkan notifikasi
+    if (typeof showToast === 'function') showToast("PROFILE SECURED", "Data Identitas berhasil disimpan ke memori permanen.", "success");
+    
+    // Update foto di pojok kiri bawah (Sidebar) secara instan
+    const sidebarName = document.querySelector('.sidebar-user-name, #sidebar-user-name, #user-name-display') || document.querySelector('div.font-bold.text-white.text-sm');
+    const sidebarAvatar = document.querySelector('.sidebar-user-avatar, #sidebar-user-avatar, #user-avatar-display') || document.querySelector('.w-10.h-10.rounded-full img');
+    if (sidebarName && nameInput && nameInput.value) sidebarName.innerText = nameInput.value.toUpperCase();
+    if (sidebarAvatar && avatarInput && avatarInput.value) sidebarAvatar.src = avatarInput.value;
+    
+    // Update foto preview di dalam halaman profil itu sendiri
+    const previewImg = tabProfile.querySelector('img');
+    if (previewImg && avatarInput && avatarInput.value) previewImg.src = avatarInput.value;
 };
 
-// 2. Robot Pemantau: Memaksa penyimpanan spesifik ke akun setiap kali tombol Save ditekan
-document.addEventListener('click', function(e) {
-    const teksTombol = (e.target.innerText || '').toLowerCase();
-    const idTombol = (e.target.id || '').toLowerCase();
+window.renderProfilePage = function() {
+    if (typeof currentLoggedInUser === 'undefined' || !currentLoggedInUser) return;
     
-    // Jika tombol yang ditekan berhubungan dengan "Simpan" atau "Update" di halaman Profil
-    if (teksTombol.includes('save') || teksTombol.includes('update profile') || idTombol.includes('save-profile')) {
-        
-        setTimeout(() => {
-            if (typeof currentLoggedInUser === 'undefined' || !currentLoggedInUser) return;
-            const lowerUser = currentLoggedInUser.toLowerCase();
-            
-            if (typeof window.savedProfiles === 'undefined') window.savedProfiles = {};
-            if (!window.savedProfiles[lowerUser]) window.savedProfiles[lowerUser] = {};
-            
-            const nameInputs = document.querySelectorAll('input[id*="name"], input[placeholder*="Name"], input[placeholder*="nama"]');
-            const avatarInputs = document.querySelectorAll('input[id*="avatar"], input[id*="photo"], input[placeholder*="URL"]');
-            
-            // Tangkap isi kotak isiannya
-            if (nameInputs.length > 0 && nameInputs[0].value) {
-                window.savedProfiles[lowerUser].name = nameInputs[0].value;
-            }
-            if (avatarInputs.length > 0 && avatarInputs[0].value) {
-                window.savedProfiles[lowerUser].avatar = avatarInputs[0].value;
-            }
-            
-            // Kunci permanen ke Local Storage milik akun tersebut
-            localStorage.setItem('ton_all_profiles', JSON.stringify(window.savedProfiles));
-            
-            if(typeof showToast === 'function') showToast("PROFILE LOCKED", "Data IC berhasil dikunci pada memori browser.", "success");
-        }, 500); // Beri jeda agar fungsi save aslinya berjalan duluan
+    const lowerUser = currentLoggedInUser.toLowerCase();
+    
+    // Bongkar brankas
+    const brankas = JSON.parse(localStorage.getItem('ton_all_profiles') || '{}');
+    const profilSaya = brankas[lowerUser] || {};
+    
+    const tabProfile = document.getElementById('tab-profile');
+    if (!tabProfile) return;
+    
+    const inputs = tabProfile.querySelectorAll('input[type="text"], input[type="url"]');
+    const nameInput = document.getElementById('profile-name') || inputs[0];
+    const avatarInput = document.getElementById('profile-avatar') || inputs[1];
+    const previewImg = tabProfile.querySelector('img');
+    
+    // Isi otomatis kolom input dengan data yang tersimpan
+    if (nameInput) nameInput.value = profilSaya.name || '';
+    if (avatarInput) avatarInput.value = profilSaya.avatar || '';
+    
+    // Tampilkan foto jika ada, jika kosong gunakan foto default
+    if (previewImg) {
+        previewImg.src = profilSaya.avatar && profilSaya.avatar.trim() !== '' 
+            ? profilSaya.avatar 
+            : `https://api.dicebear.com/7.x/avataaars/svg?seed=${lowerUser}`;
     }
-});
+};
+
+// Pastikan tombol Save di halaman profil benar-benar memicu fungsi di atas
+setInterval(() => {
+    const tabProfile = document.getElementById('tab-profile');
+    if (tabProfile) {
+        const btnSave = tabProfile.querySelector('button'); 
+        // Cegat tombol jika belum dicegat
+        if (btnSave && !btnSave.dataset.bajak) {
+            btnSave.dataset.bajak = "true"; // Penanda agar tidak diulang-ulang
+            btnSave.onclick = window.saveProfile;
+        }
+    }
+}, 1000);
