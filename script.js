@@ -4644,3 +4644,23 @@ window.logout = function() {
         currentUserRole = null;
     }
 };
+
+
+// ============================================================================
+// 💾 FIX PERSISTENSI DATA: MENGUNCI PROFILE IC KE LOCAL STORAGE
+// ============================================================================
+
+// Memantau variabel savedProfiles secara berkala dan memaksa browser 
+// menyimpannya ke memori permanen (Local Storage) jika ada perubahan/penambahan foto.
+
+setInterval(() => {
+    if (typeof savedProfiles !== 'undefined' && Object.keys(savedProfiles).length > 0) {
+        const memoriPermanen = localStorage.getItem('ton_all_profiles');
+        const memoriSementara = JSON.stringify(savedProfiles);
+        
+        // Jika terdeteksi ada data profil yang baru diedit namun belum terkunci, paksa simpan!
+        if (memoriPermanen !== memoriSementara) {
+            localStorage.setItem('ton_all_profiles', memoriSementara);
+        }
+    }
+}, 2000);
