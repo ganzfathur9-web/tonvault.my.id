@@ -4734,3 +4734,55 @@ setInterval(() => {
         }
     }
 }, 1000);
+
+// ============================================================================
+// 🛡️ HIERARCHY SHIELD: MELINDUNGI MODERATOR DARI EDIT OLEH ROLE DI BAWAHNYA
+// ============================================================================
+
+setInterval(() => {
+    // Pastikan fungsi pengecekan rank tersedia
+    if (typeof getUserRank !== 'function') return;
+
+    const myRank = String(getUserRank()).toLowerCase().trim();
+    const isMod = (myRank === 'moderator');
+
+    // Jika yang sedang login BUKAN Moderator (misal: Don, Bisnis, dll)
+    if (!isMod) {
+        // Cari semua baris di dalam tabel
+        const rows = document.querySelectorAll('tr'); 
+
+        rows.forEach(row => {
+            const rankSelect = row.querySelector('select');
+            const buttons = row.querySelectorAll('button');
+            
+            // Pastikan ini adalah baris data pemain (punya tombol atau dropdown)
+            if (rankSelect || buttons.length > 0) {
+                // Cek apakah baris ini adalah data milik "Moderator"
+                const isRowMod = (rankSelect && rankSelect.value.toLowerCase() === 'moderator') || 
+                                 row.innerText.toLowerCase().includes('moderator');
+
+                // Jika baris ini adalah Moderator, KUNCI AKSESNYA!
+                if (isRowMod) {
+                    // 1. Kunci pilihan dropdown (tidak bisa diklik)
+                    if (rankSelect) rankSelect.disabled = true;
+
+                    // 2. Kunci dan pudarkan tombol (Update & Tong Sampah)
+                    buttons.forEach(btn => {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.3'; // Membuat tombol terlihat buram/mati
+                        btn.style.cursor = 'not-allowed';
+                        
+                        // Timpa fungsi kliknya agar memunculkan pesan error jika dipaksa klik
+                        btn.onclick = function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if(typeof showToast === 'function') {
+                                showToast("ACCESS DENIED", "Don tidak memiliki otoritas untuk mengubah data Moderator!", "error");
+                            }
+                        };
+                    });
+                }
+            }
+        });
+    }
+}, 1000); // Robot pengawas berjalan setiap 1 detik mengunci UI secara otomatis
