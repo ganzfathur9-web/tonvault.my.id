@@ -4736,57 +4736,88 @@ setInterval(() => {
 }, 1000);
 
 // ============================================================================
-// 🛡️ HIERARCHY SHIELD: MELINDUNGI MODERATOR DARI EDIT OLEH ROLE DI BAWAHNYA
+// 🛡️ ADVANCED HIERARCHY SHIELD: ATURAN MUTLAK DON & MODERATOR
 // ============================================================================
 
 setInterval(() => {
-    // Pastikan fungsi pengecekan rank tersedia
-    if (typeof getUserRank !== 'function') return;
+    if (typeof getUserRank !== 'function' || typeof currentLoggedInUser === 'undefined' || !currentLoggedInUser) return;
 
     const myRank = String(getUserRank()).toLowerCase().trim();
     const isMod = (myRank === 'moderator');
+    const isDon = (myRank === 'don');
+    const myUsername = currentLoggedInUser.toLowerCase();
 
-    // Jika yang sedang login BUKAN Moderator (misal: Don, Bisnis, dll)
-    if (!isMod) {
-        // Cari semua baris di dalam tabel
-        const rows = document.querySelectorAll('tr'); 
+    // Cari semua baris data di tabel
+    const rows = document.querySelectorAll('tr'); 
 
-        rows.forEach(row => {
-            const rankSelect = row.querySelector('select');
-            const buttons = row.querySelectorAll('button');
-            
-            // Pastikan ini adalah baris data pemain (punya tombol atau dropdown)
-            if (rankSelect || buttons.length > 0) {
-                // Cek apakah baris ini adalah data milik "Moderator"
-                const isRowMod = (rankSelect && rankSelect.value.toLowerCase() === 'moderator') || 
-                                 row.innerText.toLowerCase().includes('moderator');
+    rows.forEach(row => {
+        // Cari elemen dropdown dan tombol
+        const selects = row.querySelectorAll('select');
+        const rankSelect = selects.length > 1 ? selects[1] : selects[0]; // Dropdown jabatan biasanya yg kedua
+        const buttons = row.querySelectorAll('button');
+        
+        if (rankSelect || buttons.length > 0) {
+            // Cek jabatan target di baris ini
+            const rowRankText = rankSelect ? rankSelect.value.toLowerCase() : row.innerText.toLowerCase();
+            const isRowMod = rowRankText.includes('moderator');
+            const isRowDon = rowRankText.includes('don');
 
-                // Jika baris ini adalah Moderator, KUNCI AKSESNYA!
+            // Cek apakah ini baris milik akun sendiri
+            const usernameCell = row.querySelector('td');
+            const rowUsername = usernameCell ? usernameCell.innerText.toLowerCase() : '';
+            const isMyOwnRow = rowUsername.includes(myUsername);
+
+            // ----------------------------------------------------------------
+            // ATURAN 1: Sembunyikan Opsi "Moderator" di Dropdown dari Non-Mod
+            // ----------------------------------------------------------------
+            if (rankSelect && !isMod) {
+                Array.from(rankSelect.options).forEach(opt => {
+                    const optVal = opt.value.toLowerCase();
+                    // Don tidak boleh melihat opsi Moderator. (Hanya Mod yang bisa bikin Mod baru)
+                    if (optVal === 'moderator' || (optVal === 'don' && !isDon)) {
+                        opt.disabled = true;
+                        opt.style.display = 'none';
+                    }
+                });
+            }
+
+            // ----------------------------------------------------------------
+            // ATURAN 2: Mengunci Baris (Gembok Data Atasan)
+            // ----------------------------------------------------------------
+            let shouldLock = false;
+
+            if (!isMod) {
                 if (isRowMod) {
-                    // 1. Kunci pilihan dropdown (tidak bisa diklik)
-                    if (rankSelect) rankSelect.disabled = true;
-
-                    // 2. Kunci dan pudarkan tombol (Update & Tong Sampah)
-                    buttons.forEach(btn => {
-                        btn.disabled = true;
-                        btn.style.opacity = '0.3'; // Membuat tombol terlihat buram/mati
-                        btn.style.cursor = 'not-allowed';
-                        
-                        // Timpa fungsi kliknya agar memunculkan pesan error jika dipaksa klik
-                        btn.onclick = function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if(typeof showToast === 'function') {
-                                showToast("ACCESS DENIED", "Don tidak memiliki otoritas untuk mengubah data Moderator!", "error");
-                            }
-                        };
-                    });
+                    shouldLock = true; // Non-Mod (termasuk Don) TIDAK BISA sentuh Mod
+                } else if (isDon && isRowDon && !isMyOwnRow) {
+                    shouldLock = true; // Don TIDAK BISA sentuh Don lain (hanya bisa ubah dirinya sendiri)
                 }
             }
-        });
-    }
-}, 1000); // Robot pengawas berjalan setiap 1 detik mengunci UI secara otomatis
 
+            // Eksekusi Penguncian
+            if (shouldLock) {
+                // Matikan semua dropdown di baris ini
+                selects.forEach(sel => sel.disabled = true);
+
+                // Matikan dan buramkan semua tombol (Update / Hapus)
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.3';
+                    btn.style.cursor = 'not-allowed';
+                    
+                    // Timpa klik dengan peringatan
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if(typeof showToast === 'function') {
+                            showToast("ACCESS DENIED", "Otoritas Anda tidak cukup untuk mengubah data ini!", "error");
+                        }
+                    };
+                });
+            }
+        }
+    });
+}, 1000); // Robot berpatroli setiap 1 detik
 // ============================================================================
 // 🛡️ DATA GUARDIAN: PROTEKSI MUTLAK FOTO & NAMA PROFIL (ANTI-RESET)
 // ============================================================================
